@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Button, Alert } from 'react-native';
-import { BarCodeScanner } from 'expo-barcode-scanner';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { saveItem } from '../utils/storage';
 
 export default function ScanScreen({ navigation }) {
-  const [hasPermission, setHasPermission] = useState(null);
+  const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
-      setHasPermission(status === 'granted');
-    })();
-  }, []);
+    if (!permission?.granted) {
+      requestPermission();
+    }
+  }, [permission]);
 
   const handleBarCodeScanned = async ({ data }) => {
     setScanned(true);
@@ -35,12 +34,19 @@ export default function ScanScreen({ navigation }) {
     }
   };
 
-  if (hasPermission === null) return <Text style={styles.center}>Requesting camera...</Text>;
-  if (hasPermission === false) return <Text style={styles.center}>No camera permission</Text>;
+  if (!permission) return <Text style={styles.center}>Requesting camera...</Text>;
+  if (!permission.granted) return <Text style={styles.center}>No camera permission</Text>;
 
   return (
     <View style={styles.container}>
-      <BarCodeScanner onBarCodeScanned={scanned ? undefined : handleBarCodeScanned} style={StyleSheet.absoluteFillObject} />
+      <CameraView
+        style={StyleSheet.absoluteFillObject}
+        facing="back"
+        barcodeScannerSettings={{
+          barcodeTypes: ['ean13', 'ean8', 'upc_e', 'upc_a', 'qr', 'code39', 'code128'],
+        }}
+        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+      />
       {scanned && <Button title="Scan Again" onPress={() => setScanned(false)} />}
     </View>
   );
