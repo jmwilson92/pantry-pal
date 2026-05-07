@@ -1,32 +1,24 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const STORAGE_KEY = '@pantryItems';
+const KEY = '@pantryItems';
 
 export const loadItems = async () => {
   try {
-    const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
-    return jsonValue != null ? JSON.parse(jsonValue) : [];
-  } catch (e) {
-    console.error(e);
-    return [];
-  }
+    const json = await AsyncStorage.getItem(KEY);
+    return json ? JSON.parse(json) : [];
+  } catch (e) { return []; }
 };
 
-export const saveItem = async (newItem) => {
+export const saveItem = async (item) => {
   try {
-    const currentItems = await loadItems();
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([...currentItems, newItem]));
-  } catch (e) {
-    console.error(e);
-  }
+    const items = await loadItems();
+    await AsyncStorage.setItem(KEY, JSON.stringify([...items, { ...item, id: Date.now().toString() }]));
+  } catch (e) {}
 };
 
 export const deleteItem = async (id) => {
   try {
-    const currentItems = await loadItems();
-    const filtered = currentItems.filter(item => item.id !== id);
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-  } catch (e) {
-    console.error(e);
-  }
+    const items = await loadItems();
+    await AsyncStorage.setItem(KEY, JSON.stringify(items.filter(i => i.id !== id)));
+  } catch (e) {}
 };
