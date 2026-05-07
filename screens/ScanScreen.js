@@ -16,27 +16,23 @@ export default function ScanScreen({ navigation }) {
 
   const handleBarCodeScanned = async ({ data }) => {
     setScanned(true);
-    Alert.prompt(
-      'Item Scanned',
-      `Barcode: ${data}\n\nEnter item name or leave as is:`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Save',
-          onPress: async (name) => {
-            const itemName = name || `Item ${data.substring(0,8)}`;
-            await saveItem({
-              id: Date.now().toString(),
-              name: itemName,
-              barcode: data,
-              expiry: 'NA',
-              added: new Date().toISOString()
-            });
-            Alert.alert('Saved!', `${itemName} added to pantry`, [{ text: 'OK', onPress: () => navigation.goBack() }]);
-          }
-        }
-      ]
-    );
+    try {
+      const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${data}.json`);
+      const json = await response.json();
+      const productName = json.product ? json.product.product_name || 'Unknown Item' : 'Unknown Item';
+      
+      Alert.alert('✅ Item Found!', `Name: ${productName}`, [
+        { text: 'Cancel', onPress: () => setScanned(false) },
+        { text: 'Add with NA expiry', onPress: () => {
+          saveItem({ name: productName, barcode: data, expiry: 'NA' });
+          navigation.navigate('Inventory');
+        }}
+      ]);
+    } catch (e) {
+      Alert.alert('Barcode Scanned', `Code: ${data}`, [
+        { text: 'Add Manually', onPress: () => navigation.navigate('Inventory') }
+      ]);
+    }
   };
 
   if (hasPermission === null) return <Text style={styles.center}>Requesting camera...</Text>;
@@ -44,16 +40,13 @@ export default function ScanScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <BarCodeScanner
-        onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-        style={StyleSheet.absoluteFillObject}
-      />
+      <BarCodeScanner onBarCodeScanned={scanned ? undefined : handleBarCodeScanned} style={StyleSheet.absoluteFillObject} />
       {scanned && <Button title="Scan Again" onPress={() => setScanned(false)} />}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', fontSize: 18 }
+  container: { flex: 1, justifyContent: 'center' },
+  center: { flex: 1, textAlign: 'center', marginTop: 50, fontSize: 18 }
 });

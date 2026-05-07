@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, StyleSheet, FlatList, Alert } from 'react-native';
+import { View, Text, Button, StyleSheet, FlatList } from 'react-native';
 import { loadItems } from '../utils/storage';
 
 export default function HomeScreen({ navigation }) {
@@ -11,33 +11,28 @@ export default function HomeScreen({ navigation }) {
 
   const expiringSoon = items.filter(item => {
     if (!item.expiry || item.expiry === 'NA') return false;
-    const daysLeft = Math.ceil((new Date(item.expiry) - new Date()) / (1000 * 60 * 60 * 24));
+    const daysLeft = Math.ceil((new Date(item.expiry) - new Date()) / (86400000));
     return daysLeft > 0 && daysLeft <= 7;
   });
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🥬 Pantry Pal</Text>
-      <Text style={styles.subtitle}>Expiring Soon: {expiringSoon.length} items</Text>
+      <Text style={styles.title}>Pantry Pal 🥬</Text>
+      <Text style={styles.subtitle}>Expiring soon: {expiringSoon.length} items</Text>
       <FlatList
-        data={expiringSoon.slice(0,5)}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.expiringItem}>
-            <Text>{item.name}</Text>
-            <Text style={{color: 'red'}}>{item.expiry}</Text>
-          </View>
-        )}
+        data={expiringSoon}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => <Text style={styles.item}>{item.name} — {item.expiry}</Text>}
       />
       <Button title="Scan New Item" onPress={() => navigation.navigate('Scan')} />
-      <Button title="View Inventory" onPress={() => navigation.navigate('Inventory')} />
+      <Button title="View Full Inventory" onPress={() => navigation.navigate('Inventory')} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#f8f8f8' },
-  title: { fontSize: 36, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 },
-  subtitle: { fontSize: 20, textAlign: 'center', marginBottom: 20 },
-  expiringItem: { backgroundColor: '#fff', padding: 15, marginVertical: 6, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 5 }
+  container: { flex: 1, padding: 20 },
+  title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
+  subtitle: { fontSize: 20, marginBottom: 10 },
+  item: { padding: 12, backgroundColor: '#f0f0f0', marginVertical: 4, borderRadius: 8 }
 });
