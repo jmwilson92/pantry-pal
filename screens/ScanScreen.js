@@ -16,30 +16,31 @@ export default function ScanScreen({ navigation }) {
 
   const handleBarCodeScanned = async ({ data }) => {
     setScanned(true);
-    Alert.alert(
-      'Barcode Scanned',
-      `Barcode: ${data}\n\nNow add item details (name, expiry, NA). Next version will auto-lookup name.`,
+    Alert.prompt(
+      'Item Scanned',
+      `Barcode: ${data}\n\nEnter item name or leave as is:`,
       [
-        { text: 'Add Manually', onPress: () => {
-          // For now just save a placeholder
-          const newItem = {
-            name: `Item ${data.slice(0,8)}`,
-            expiry: 'NA',
-            location: 'Fridge',
-          };
-          saveItem(newItem);
-          navigation.navigate('Inventory');
-        }}
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Save',
+          onPress: async (name) => {
+            const itemName = name || `Item ${data.substring(0,8)}`;
+            await saveItem({
+              id: Date.now().toString(),
+              name: itemName,
+              barcode: data,
+              expiry: 'NA',
+              added: new Date().toISOString()
+            });
+            Alert.alert('Saved!', `${itemName} added to pantry`, [{ text: 'OK', onPress: () => navigation.goBack() }]);
+          }
+        }
       ]
     );
   };
 
-  if (hasPermission === null) {
-    return <Text style={styles.center}>Requesting camera permission...</Text>;
-  }
-  if (hasPermission === false) {
-    return <Text style={styles.center}>No access to camera</Text>;
-  }
+  if (hasPermission === null) return <Text style={styles.center}>Requesting camera...</Text>;
+  if (hasPermission === false) return <Text style={styles.center}>No camera permission</Text>;
 
   return (
     <View style={styles.container}>
@@ -47,9 +48,7 @@ export default function ScanScreen({ navigation }) {
         onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
         style={StyleSheet.absoluteFillObject}
       />
-      {scanned && (
-        <Button title="Scan Again" onPress={() => setScanned(false)} />
-      )}
+      {scanned && <Button title="Scan Again" onPress={() => setScanned(false)} />}
     </View>
   );
 }
