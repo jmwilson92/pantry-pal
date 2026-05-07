@@ -1,18 +1,5 @@
-# Flutter
-.dart_tool/
-pubspec.lock
-*.iml
-*.log
-*.pyc
-*.swp
+node_modules
+.expo
 .DS_Store
-.idea/
-.vscode/
-build/
-android/app/debug/
-android/app/profile/
-android/app/release/
-ios/Flutter/
-
-# Isar
-**/*.isar
+*.log
+assets/
