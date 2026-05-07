@@ -76,8 +76,9 @@ export default function ScanScreen({ navigation }) {
         ]
       );
     } catch (e) {
-      Alert.alert('Barcode Scanned', `Code: ${data}`, [
-        { text: 'Add Manually', onPress: () => navigation.navigate('Inventory') }
+      // No more annoying barcode scanned popup
+      Alert.alert('Item not found in database', `Barcode: ${data}`, [
+        { text: 'Add Manually', onPress: () => { setScanned(false); navigation.navigate('Inventory'); } }
       ]);
     }
   };
@@ -143,7 +144,6 @@ export default function ScanScreen({ navigation }) {
         </View>
       )}
 
-      {/* Nice Date Picker Modal */}
       <Modal visible={showDateModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
