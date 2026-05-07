@@ -1,22 +1,42 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function InventoryScreen() {
-  const dummyItems = [
-    { id: '1', name: 'Milk', expiry: '2026-05-12', location: 'Fridge' },
-    { id: '2', name: 'Bread', expiry: '2026-05-08', location: 'Pantry' },
-  ];
+  const [items, setItems] = useState([]);
+
+  useEffect(() => {
+    loadItems();
+  }, []);
+
+  const loadItems = async () => {
+    const stored = await AsyncStorage.getItem('pantryItems');
+    if (stored) setItems(JSON.parse(stored));
+  };
+
+  const getDaysLeft = (expiry) => {
+    if (!expiry || expiry === 'NA') return 'No expiry';
+    const days = Math.ceil((new Date(expiry) - new Date()) / (1000 * 60 * 60 * 24));
+    return days > 0 ? `${days} days` : 'Expired';
+  };
+
+  const getColor = (expiry) => {
+    if (!expiry || expiry === 'NA') return '#64748b';
+    const days = Math.ceil((new Date(expiry) - new Date()) / (1000 * 60 * 60 * 24));
+    if (days < 0) return '#ef4444';
+    if (days <= 3) return '#f59e0b';
+    return '#22c55e';
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Your Inventory</Text>
       <FlatList
-        data={dummyItems}
+        data={items}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.item}>
-            <Text>{item.name} ({item.location})</Text>
-            <Text>Expires: {item.expiry}</Text>
+          <View style={[styles.itemCard, { borderLeftColor: getColor(item.expiryDate) }]}>
+            <Text style={styles.itemName}>{item.name}</Text>
+            <Text style={styles.itemDetail}>Qty: {item.quantity} • {getDaysLeft(item.expiryDate)}</Text>
           </View>
         )}
       />
@@ -25,7 +45,8 @@ export default function InventoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-  item: { padding: 15, backgroundColor: '#fff', marginBottom: 10, borderRadius: 8 }
+  container: { flex: 1, padding: 15, backgroundColor: '#f8fafc' },
+  itemCard: { backgroundColor: 'white', padding: 15, marginVertical: 6, borderRadius: 10, borderLeftWidth: 6 },
+  itemName: { fontSize: 18, fontWeight: '600' },
+  itemDetail: { fontSize: 14, color: '#64748b', marginTop: 4 }
 });
