@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Button, Alert } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { saveItem } from '../utils/storage';
 
 export default function ScanScreen({ navigation }) {
   const [hasPermission, setHasPermission] = useState(null);
@@ -14,55 +14,32 @@ export default function ScanScreen({ navigation }) {
     })();
   }, []);
 
-  const handleBarCodeScanned = async ({ type, data }) => {
+  const handleBarCodeScanned = async ({ data }) => {
     setScanned(true);
-    try {
-      const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${data}.json`);
-      const json = await response.json();
-      const product = json.product;
-
-      if (product) {
-        const newItem = {
-          id: Date.now().toString(),
-          barcode: data,
-          name: product.product_name || 'Unknown Product',
-          brand: product.brands || '',
-          expiryDate: '',
-          location: 'Fridge',
-          quantity: 1,
-          addedDate: new Date().toISOString()
-        };
-
-        Alert.alert(
-          'Item Found',
-          `${newItem.name}\nDo you want to add it?`,
-          [
-            { text: 'Cancel', onPress: () => navigation.goBack() },
-            {
-              text: 'Add',
-              onPress: async () => {
-                const stored = await AsyncStorage.getItem('pantryItems');
-                const items = stored ? JSON.parse(stored) : [];
-                items.push(newItem);
-                await AsyncStorage.setItem('pantryItems', JSON.stringify(items));
-                Alert.alert('Success', 'Item added to inventory!');
-                navigation.navigate('Home');
-              }
-            }
-          ]
-        );
-      } else {
-        Alert.alert('Not Found', 'Could not find product. Try manual entry next version.');
-        navigation.goBack();
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to lookup product');
-      navigation.goBack();
-    }
+    Alert.alert(
+      'Barcode Scanned',
+      `Barcode: ${data}\n\nNow add item details (name, expiry, NA). Next version will auto-lookup name.`,
+      [
+        { text: 'Add Manually', onPress: () => {
+          // For now just save a placeholder
+          const newItem = {
+            name: `Item ${data.slice(0,8)}`,
+            expiry: 'NA',
+            location: 'Fridge',
+          };
+          saveItem(newItem);
+          navigation.navigate('Inventory');
+        }}
+      ]
+    );
   };
 
-  if (hasPermission === null) return <Text>Requesting camera permission...</Text>;
-  if (hasPermission === false) return <Text>No access to camera</Text>;
+  if (hasPermission === null) {
+    return <Text style={styles.center}>Requesting camera permission...</Text>;
+  }
+  if (hasPermission === false) {
+    return <Text style={styles.center}>No access to camera</Text>;
+  }
 
   return (
     <View style={styles.container}>
@@ -70,11 +47,14 @@ export default function ScanScreen({ navigation }) {
         onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
         style={StyleSheet.absoluteFillObject}
       />
-      {scanned && <Button title={'Tap to Scan Again'} onPress={() => setScanned(false)} />}
+      {scanned && (
+        <Button title="Scan Again" onPress={() => setScanned(false)} />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' }
+  container: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', fontSize: 18 }
 });

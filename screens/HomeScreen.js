@@ -1,61 +1,52 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, Button, StyleSheet, FlatList, Alert } from 'react-native';
+import { loadItems } from '../utils/storage';
 
 export default function HomeScreen({ navigation }) {
   const [items, setItems] = useState([]);
 
-  useEffect(() => {
-    loadItems();
-  }, []);
-
-  const loadItems = async () => {
-    try {
-      const storedItems = await AsyncStorage.getItem('pantryItems');
-      if (storedItems) setItems(JSON.parse(storedItems));
-    } catch (e) {
-      console.log(e);
-    }
+  const loadData = async () => {
+    const data = await loadItems();
+    setItems(data);
   };
 
+  useEffect(() => {
+    loadData();
+  }, []);
+
   const expiringSoon = items.filter(item => {
-    if (!item.expiryDate || item.expiryDate === 'NA') return false;
-    const daysLeft = Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
-    return daysLeft <= 7 && daysLeft > 0;
+    if (!item.expiry || item.expiry === 'NA') return false;
+    const expiryDate = new Date(item.expiry);
+    const daysLeft = Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24));
+    return daysLeft > 0 && daysLeft <= 7;
   });
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Pantry Pal 🥬</Text>
-      <TouchableOpacity style={styles.scanButton} onPress={() => navigation.navigate('Scan')}>
-        <Text style={styles.scanButtonText}>📸 Scan New Item</Text>
-      </TouchableOpacity>
+      <Text style={styles.subtitle}>Expiring soon: {expiringSoon.length} items</Text>
+      
+      <FlatList
+        data={expiringSoon}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.expiringCard}>
+            <Text style={styles.itemName}>{item.name}</Text>
+            <Text>Expires: {item.expiry}</Text>
+          </View>
+        )}
+      />
 
-      <TouchableOpacity style={styles.inventoryButton} onPress={() => navigation.navigate('Inventory')}>
-        <Text style={styles.inventoryButtonText}>📦 View Inventory</Text>
-      </TouchableOpacity>
-
-      {expiringSoon.length > 0 && (
-        <View>
-          <Text style={styles.sectionTitle}>Expiring Soon ({expiringSoon.length})</Text>
-          <FlatList
-            data={expiringSoon}
-            keyExtractor={(item) => item.id}
-            renderItem={({item}) => <Text style={styles.expiringItem}>{item.name} - {Math.ceil((new Date(item.expiryDate) - new Date()) / (1000*60*60*24))} days</Text>}
-          />
-        </View>
-      )}
+      <Button title="Scan New Item" onPress={() => navigation.navigate('Scan')} />
+      <Button title="View All Inventory" onPress={() => navigation.navigate('Inventory')} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
-  title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', marginBottom: 30 },
-  scanButton: { backgroundColor: '#22c55e', padding: 20, borderRadius: 12, marginBottom: 15, alignItems: 'center' },
-  scanButtonText: { color: 'white', fontSize: 20, fontWeight: '600' },
-  inventoryButton: { backgroundColor: '#3b82f6', padding: 20, borderRadius: 12, alignItems: 'center' },
-  inventoryButtonText: { color: 'white', fontSize: 20, fontWeight: '600' },
-  sectionTitle: { fontSize: 18, fontWeight: '600', marginVertical: 15, color: '#ef4444' },
-  expiringItem: { padding: 10, backgroundColor: '#fef2f2', marginVertical: 4, borderRadius: 8 }
+  container: { flex: 1, padding: 20, backgroundColor: '#f8f9fa' },
+  title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 },
+  subtitle: { fontSize: 20, textAlign: 'center', marginBottom: 20 },
+  expiringCard: { backgroundColor: '#fff', padding: 15, marginVertical: 6, borderRadius: 12, elevation: 3 },
+  itemName: { fontSize: 18, fontWeight: '600' }
 });

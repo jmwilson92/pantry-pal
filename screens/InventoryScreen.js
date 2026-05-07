@@ -1,31 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Button, Alert } from 'react-native';
+import { loadItems, deleteItem } from '../utils/storage';
 
 export default function InventoryScreen() {
   const [items, setItems] = useState([]);
 
+  const refresh = async () => {
+    const data = await loadItems();
+    setItems(data);
+  };
+
   useEffect(() => {
-    loadItems();
+    refresh();
   }, []);
 
-  const loadItems = async () => {
-    const stored = await AsyncStorage.getItem('pantryItems');
-    if (stored) setItems(JSON.parse(stored));
-  };
-
-  const getDaysLeft = (expiry) => {
-    if (!expiry || expiry === 'NA') return 'No expiry';
-    const days = Math.ceil((new Date(expiry) - new Date()) / (1000 * 60 * 60 * 24));
-    return days > 0 ? `${days} days` : 'Expired';
-  };
-
-  const getColor = (expiry) => {
-    if (!expiry || expiry === 'NA') return '#64748b';
-    const days = Math.ceil((new Date(expiry) - new Date()) / (1000 * 60 * 60 * 24));
-    if (days < 0) return '#ef4444';
-    if (days <= 3) return '#f59e0b';
-    return '#22c55e';
+  const getExpiryColor = (expiry) => {
+    if (!expiry || expiry === 'NA') return '#666666';
+    const daysLeft = Math.ceil((new Date(expiry).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    if (daysLeft < 0) return '#ff0000';
+    if (daysLeft <= 3) return '#ff9800';
+    if (daysLeft <= 7) return '#ffc107';
+    return '#4caf50';
   };
 
   return (
@@ -34,19 +29,29 @@ export default function InventoryScreen() {
         data={items}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={[styles.itemCard, { borderLeftColor: getColor(item.expiryDate) }]}>
-            <Text style={styles.itemName}>{item.name}</Text>
-            <Text style={styles.itemDetail}>Qty: {item.quantity} • {getDaysLeft(item.expiryDate)}</Text>
+          <View style={[styles.card, { borderLeftColor: getExpiryColor(item.expiry), borderLeftWidth: 6 }]}>
+            <Text style={styles.name}>{item.name}</Text>
+            <Text style={styles.expiry}>Expires: {item.expiry || 'No expiry'}</Text>
+            <TouchableOpacity onPress={() => {
+              Alert.alert('Confirm', 'Mark as used / delete?', [
+                { text: 'Cancel' },
+                { text: 'Delete', onPress: () => { deleteItem(item.id); refresh(); } }
+              ]);
+            }}>
+              <Text style={styles.deleteText}>Mark as Used / Delete</Text>
+            </TouchableOpacity>
           </View>
         )}
       />
+      <Button title="Refresh" onPress={refresh} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 15, backgroundColor: '#f8fafc' },
-  itemCard: { backgroundColor: 'white', padding: 15, marginVertical: 6, borderRadius: 10, borderLeftWidth: 6 },
-  itemName: { fontSize: 18, fontWeight: '600' },
-  itemDetail: { fontSize: 14, color: '#64748b', marginTop: 4 }
+  container: { flex: 1, padding: 15, backgroundColor: '#f8f9fa' },
+  card: { backgroundColor: '#fff', padding: 15, marginVertical: 8, borderRadius: 12, elevation: 3 },
+  name: { fontSize: 18, fontWeight: 'bold' },
+  expiry: { fontSize: 15, color: '#555', marginTop: 4 },
+  deleteText: { color: 'red', fontWeight: 'bold', marginTop: 10 }
 });
