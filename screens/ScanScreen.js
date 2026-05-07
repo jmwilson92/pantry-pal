@@ -1,17 +1,63 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Button, Alert } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Button, Alert, Animated, Modal, TouchableOpacity } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { saveItem } from '../utils/storage';
 
 export default function ScanScreen({ navigation }) {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [pendingItem, setPendingItem] = useState(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const scanLineAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (!permission?.granted) {
       requestPermission();
     }
   }, [permission]);
+
+  // Sweet scanning animation
+  useEffect(() => {
+    if (!scanned) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(scanLineAnim, {
+            toValue: 1,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scanLineAnim, {
+            toValue: 0,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.2,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      scanLineAnim.stopAnimation();
+      pulseAnim.stopAnimation();
+    }
+  }, [scanned]);
 
   const handleBarCodeScanned = async ({ data }) => {
     setScanned(true);
@@ -20,13 +66,29 @@ export default function ScanScreen({ navigation }) {
       const json = await response.json();
       const productName = json.product ? json.product.product_name || 'Unknown Item' : 'Unknown Item';
       
-      Alert.alert('✅ Item Found!', `Name: ${productName}`, [
-        { text: 'Cancel', onPress: () => setScanned(false) },
-        { text: 'Add with NA expiry', onPress: () => {
-          saveItem({ name: productName, barcode: data, expiry: 'NA' });
-          navigation.navigate('Inventory');
-        }}
-      ]);
+      setPendingItem({ name: productName, barcode: data });
+      
+      Alert.alert(
+        '✅ Item Found!',
+        `Name: ${productName}`,
+        [
+          { 
+            text: 'Add with NA expiry', 
+            onPress: () => {
+              saveItem({ name: productName, barcode: data, expiry: 'NA' });
+              showToastMessage('Added to your pantry/fridge!');
+              setTimeout(() => navigation.navigate('Inventory'), 1200);
+            }
+          },
+          { 
+            text: 'Add expiry date', 
+            onPress: () => {
+              setShowDatePicker(true);
+            }
+          },
+          { text: 'Cancel', onPress: () => setScanned(false) }
+        ]
+      );
     } catch (e) {
       Alert.alert('Barcode Scanned', `Code: ${data}`, [
         { text: 'Add Manually', onPress: () => navigation.navigate('Inventory') }
@@ -34,8 +96,34 @@ export default function ScanScreen({ navigation }) {
     }
   };
 
+  const handleDateChange = (event, date) => {
+    setShowDatePicker(false);
+    if (date && pendingItem) {
+      saveItem({ 
+        name: pendingItem.name, 
+        barcode: pendingItem.barcode, 
+        expiry: date.toISOString().split('T')[0] 
+      });
+      showToastMessage('Added to your pantry/fridge!');
+      setTimeout(() => navigation.navigate('Inventory'), 1200);
+    }
+    setScanned(false);
+    setPendingItem(null);
+  };
+
+  const showToastMessage = (message) => {
+    setToastMessage(message);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
+  };
+
   if (!permission) return <Text style={styles.center}>Requesting camera...</Text>;
   if (!permission.granted) return <Text style={styles.center}>No camera permission</Text>;
+
+  const scanLineTranslate = scanLineAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 300],
+  });
 
   return (
     <View style={styles.container}>
@@ -47,12 +135,117 @@ export default function ScanScreen({ navigation }) {
         }}
         onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
       />
-      {scanned && <Button title="Scan Again" onPress={() => setScanned(false)} />}
+
+      {/* Scanning Box Overlay with Animation */}
+      <View style={styles.overlay}>
+        <Animated.View 
+          style={[styles.scanBox, { transform: [{ scale: pulseAnim }] }]}
+        >
+          {/* Corner brackets */}
+          <View style={[styles.corner, styles.topLeft]} />
+          <View style={[styles.corner, styles.topRight]} />
+          <View style={[styles.corner, styles.bottomLeft]} />
+          <View style={[styles.corner, styles.bottomRight]} />
+          
+          {/* Moving scan line */}
+          <Animated.View 
+            style={[styles.scanLine, { transform: [{ translateY: scanLineTranslate }] }]} 
+          />
+        </Animated.View>
+        
+        <Text style={styles.instruction}>Align barcode inside the box</Text>
+      </View>
+
+      {scanned && (
+        <Button title="Scan Again" onPress={() => setScanned(false)} />
+      )}
+
+      {/* Toast Notification */}
+      {showToast && (
+        <View style={styles.toast}>
+          <Text style={styles.toastText}>{toastMessage}</Text>
+        </View>
+      )}
+
+      {/* Date Picker Modal */}
+      {showDatePicker && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="spinner"
+          onChange={handleDateChange}
+          minimumDate={new Date()}
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center' },
-  center: { flex: 1, textAlign: 'center', marginTop: 50, fontSize: 18 }
+  center: { flex: 1, textAlign: 'center', marginTop: 50, fontSize: 18 },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scanBox: {
+    width: 280,
+    height: 280,
+    borderWidth: 3,
+    borderColor: '#00ff9f',
+    backgroundColor: 'transparent',
+    position: 'relative',
+  },
+  corner: {
+    position: 'absolute',
+    width: 30,
+    height: 30,
+    borderColor: '#00ff9f',
+    borderWidth: 4,
+  },
+  topLeft: { top: -2, left: -2, borderRightWidth: 0, borderBottomWidth: 0 },
+  topRight: { top: -2, right: -2, borderLeftWidth: 0, borderBottomWidth: 0 },
+  bottomLeft: { bottom: -2, left: -2, borderRightWidth: 0, borderTopWidth: 0 },
+  bottomRight: { bottom: -2, right: -2, borderLeftWidth: 0, borderTopWidth: 0 },
+  scanLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: '#00ff9f',
+    shadowColor: '#00ff9f',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 10,
+  },
+  instruction: {
+    color: '#fff',
+    fontSize: 16,
+    marginTop: 30,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  toast: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    right: 20,
+    backgroundColor: '#00ff9f',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  toastText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });
