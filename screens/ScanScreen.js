@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Button, Alert, Animated, Modal, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Button, Alert, Animated, Modal, TouchableOpacity } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { saveItem } from '../utils/storage';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function ScanScreen({ navigation }) {
   const [permission, requestPermission] = useCameraPermissions();
@@ -17,26 +15,6 @@ export default function ScanScreen({ navigation }) {
   const celebrationAnim = useRef(new Animated.Value(0)).current;
   const scanLineAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const snackAnims = useRef([]).current;
-
-  const createSnackAnims = () => {
-    const snacks = ['🥜', '🍎', '🥕', '🥬', '🌶️', '🥝', '🍌'];
-    snackAnims.length = 0;
-    
-    for (let i = 0; i < 8; i++) {
-      const anim = {
-        emoji: snacks[Math.floor(Math.random() * snacks.length)],
-        x: new Animated.Value(Math.random() * SCREEN_WIDTH),
-        y: new Animated.Value(SCREEN_HEIGHT * 0.3),
-        scale: new Animated.Value(0.5),
-        opacity: new Animated.Value(1),
-        rotate: new Animated.Value(0),
-        translateX: new Animated.Value(0),
-        translateY: new Animated.Value(0),
-      };
-      snackAnims.push(anim);
-    }
-  };
 
   useEffect(() => {
     if (!permission?.granted) {
@@ -110,9 +88,9 @@ export default function ScanScreen({ navigation }) {
         barcode: pendingItem.barcode, 
         expiry: selectedDate.toISOString().split('T')[0] 
       });
+      setShowDateModal(false); // Close modal immediately
       triggerCelebration('Food added! ✅');
       setTimeout(() => {
-        setShowDateModal(false);
         setScanned(false);
         setPendingItem(null);
         navigation.navigate('Inventory');
@@ -123,56 +101,12 @@ export default function ScanScreen({ navigation }) {
   const triggerCelebration = (message) => {
     setCelebrationMessage(message);
     setShowCelebration(true);
-    createSnackAnims();
     
     Animated.timing(celebrationAnim, {
       toValue: 1,
       duration: 400,
       useNativeDriver: true,
     }).start();
-    
-    snackAnims.forEach((snack, index) => {
-      const delay = index * 80;
-      const randomX = (Math.random() - 0.5) * 300;
-      const randomY = Math.random() * 200 + 100;
-      
-      setTimeout(() => {
-        Animated.parallel([
-          Animated.timing(snack.translateX, {
-            toValue: randomX,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(snack.translateY, {
-            toValue: randomY,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(snack.scale, {
-            toValue: 1.2,
-            duration: 600,
-            useNativeDriver: true,
-          }),
-          Animated.timing(snack.rotate, {
-            toValue: (Math.random() - 0.5) * 2,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.sequence([
-            Animated.timing(snack.opacity, {
-              toValue: 1,
-              duration: 400,
-              useNativeDriver: true,
-            }),
-            Animated.timing(snack.opacity, {
-              toValue: 0,
-              duration: 400,
-              useNativeDriver: true,
-            }),
-          ]),
-        ]).start();
-      }, delay);
-    });
     
     setTimeout(() => {
       Animated.timing(celebrationAnim, {
@@ -230,30 +164,6 @@ export default function ScanScreen({ navigation }) {
           >
             <Text style={styles.celebrationText}>{celebrationMessage}</Text>
           </Animated.View>
-          
-          {snackAnims.map((snack, index) => (
-            <Animated.Text
-              key={index}
-              style={{
-                position: 'absolute',
-                left: snack.x,
-                top: snack.y,
-                fontSize: 28,
-                opacity: snack.opacity,
-                transform: [
-                  { translateX: snack.translateX },
-                  { translateY: snack.translateY },
-                  { scale: snack.scale },
-                  { rotate: snack.rotate.interpolate({
-                    inputRange: [-1, 1],
-                    outputRange: ['-30deg', '30deg'],
-                  }) }
-                ],
-              }}
-            >
-              {snack.emoji}
-            </Animated.Text>
-          ))}
         </View>
       )}
 
