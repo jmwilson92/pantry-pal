@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Modal, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Modal, Dimensions, Image } from 'react-native';
 import { loadItems } from '../utils/storage';
-import Svg, { Polygon } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -71,15 +70,6 @@ export default function HomeScreen({ navigation }) {
     applyFiltersAndSort(items, activeFilter, mode);
   };
 
-  const getCategoryEmoji = (name) => {
-    const n = name.toLowerCase();
-    if (n.includes('milk') || n.includes('cheese') || n.includes('yogurt') || n.includes('butter')) return '🥛';
-    if (n.includes('apple') || n.includes('banana') || n.includes('orange') || n.includes('berry')) return '🍎';
-    if (n.includes('carrot') || n.includes('lettuce') || n.includes('tomato') || n.includes('potato')) return '🥕';
-    if (n.includes('chicken') || n.includes('beef') || n.includes('pork') || n.includes('fish')) return '🍗';
-    return '🛒';
-  };
-
   const getUrgencyColor = (item) => {
     if (!item.expiry || item.expiry === 'NA') return '#22c55e';
     const daysLeft = Math.ceil((new Date(item.expiry) - new Date()) / (1000 * 60 * 60 * 24));
@@ -96,7 +86,8 @@ export default function HomeScreen({ navigation }) {
     return `${daysLeft}d`;
   };
 
-  const hexPoints = '50,5 95,25 95,75 50,95 5,75 5,25';
+  // Generic placeholder image (shopping cart)
+  const getPlaceholderImage = () => 'https://cdn-icons-png.flaticon.com/512/3081/3081559.png';
 
   return (
     <View style={styles.container}>
@@ -138,7 +129,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Interlocking Honeycomb Grid */}
+      {/* Circle Grid with Photos */}
       <ScrollView 
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
@@ -146,28 +137,15 @@ export default function HomeScreen({ navigation }) {
       >
         {filteredItems.map((item, index) => {
           const urgency = getUrgencyColor(item);
-          const row = Math.floor(index / 2);
-          const isOddRow = row % 2 === 1;
           return (
-            <View 
-              key={item.id} 
-              style={[styles.itemCard, { 
-                shadowColor: urgency,
-                marginLeft: isOddRow ? 62 : 0 
-              }]}
-            >
-              <View style={styles.hexWrapper}>
-                <Svg width={125} height={125} viewBox="0 0 100 100">
-                  <Polygon
-                    points={hexPoints}
-                    fill="#1e293b"
-                    stroke="#334155"
-                    strokeWidth="4"
-                  />
-                </Svg>
-                <View style={styles.contentOverlay}>
-                  <Text style={styles.emoji}>{getCategoryEmoji(item.name)}</Text>
-                  <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
+            <View key={item.id} style={[styles.itemCard, { shadowColor: urgency }]}>
+              <View style={styles.circleWrapper}>
+                <Image 
+                  source={{ uri: getPlaceholderImage() }} 
+                  style={styles.foodImage} 
+                />
+                <View style={styles.infoOverlay}>
+                  <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
                   <Text style={styles.itemDays}>{getDaysLeftText(item)}</Text>
                   <Text style={styles.itemExpiry}>{item.expiry || 'No date'}</Text>
                 </View>
@@ -219,34 +197,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     flexWrap: 'wrap', 
     justifyContent: 'flex-start',
-    paddingHorizontal: 4,
+    paddingHorizontal: 8,
     paddingBottom: 40,
-    gap: 4,
+    gap: 10,
   },
   itemCard: { 
-    width: 125,
+    width: 140,
     alignItems: 'center',
-    shadowOffset: { width: -10, height: 0 },
-    shadowOpacity: 0.85,
-    shadowRadius: 10,
+    shadowOffset: { width: -12, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 14,
+    elevation: 12,
+  },
+  circleWrapper: { 
+    width: 130,
+    height: 130,
+    borderRadius: 999,
+    overflow: 'hidden',
+    backgroundColor: '#1e293b',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
     elevation: 10,
   },
-  hexWrapper: { 
-    width: 125,
-    height: 125,
-    alignItems: 'center',
-    justifyContent: 'center',
+  foodImage: { 
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
-  contentOverlay: { 
+  infoOverlay: { 
     position: 'absolute',
-    top: 16,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    paddingVertical: 8,
+    paddingHorizontal: 8,
     alignItems: 'center',
-    width: 105,
   },
-  emoji: { fontSize: 36, marginBottom: 2 },
-  itemName: { fontSize: 11, fontWeight: '700', color: '#f8fafc', textAlign: 'center', lineHeight: 13, paddingHorizontal: 2 },
-  itemDays: { fontSize: 10, fontWeight: '800', color: '#94a3b8' },
-  itemExpiry: { fontSize: 9, color: '#64748b', marginTop: 1 },
+  itemName: { fontSize: 11, fontWeight: '700', color: '#fff', textAlign: 'center' },
+  itemDays: { fontSize: 10, fontWeight: '800', color: '#4ade80' },
+  itemExpiry: { fontSize: 9, color: '#94a3b8', marginTop: 2 },
   emptyState: { alignItems: 'center', paddingTop: 80 },
   emptyText: { fontSize: 22, fontWeight: '600', color: '#64748b' },
   emptySubtext: { fontSize: 16, color: '#475569', marginTop: 8 },
