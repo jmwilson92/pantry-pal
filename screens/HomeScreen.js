@@ -4,7 +4,7 @@ import { loadItems } from '../utils/storage';
 import Svg, { Polygon, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = (SCREEN_WIDTH - 32) / 2;
+const CARD_WIDTH = (SCREEN_WIDTH - 24) / 2;
 
 export default function HomeScreen({ navigation }) {
   const [items, setItems] = useState([]);
@@ -139,7 +139,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Hex Grid - Tight + Clean */}
+      {/* Hex Grid - Tight + Inside Info */}
       <FlatList
         data={filteredItems}
         keyExtractor={item => item.id}
@@ -151,27 +151,27 @@ export default function HomeScreen({ navigation }) {
           return (
             <View style={styles.itemCard}>
               <View style={styles.hexWrapper}>
-                <Svg width={108} height={108} viewBox="0 0 100 100">
+                <Svg width={120} height={120} viewBox="0 0 100 100">
                   <Defs>
                     <LinearGradient id="leftGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <Stop offset="0%" stopColor={urgency} stopOpacity="0.9" />
-                      <Stop offset="35%" stopColor="#1e293b" stopOpacity="1" />
+                      <Stop offset="0%" stopColor={urgency} stopOpacity="1" />
+                      <Stop offset="40%" stopColor="#1e293b" stopOpacity="1" />
                     </LinearGradient>
                   </Defs>
                   <Polygon
                     points={hexPoints}
                     fill="url(#leftGradient)"
                     stroke="#334155"
-                    strokeWidth="3"
+                    strokeWidth="4"
                   />
                 </Svg>
-                <View style={styles.emojiContainer}>
+                <View style={styles.contentOverlay}>
                   <Text style={styles.emoji}>{getCategoryEmoji(item.name)}</Text>
+                  <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
+                  <Text style={styles.itemDays}>{getDaysLeftText(item)}</Text>
+                  <Text style={styles.itemBarcode}>#{item.barcode}</Text>
                 </View>
               </View>
-              <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
-              <Text style={styles.itemDays}>{getDaysLeftText(item)}</Text>
-              <Text style={styles.itemBarcode}>#{item.barcode}</Text>
             </View>
           );
         }}
@@ -221,29 +221,29 @@ const styles = StyleSheet.create({
   sortText: { fontWeight: '600', color: '#e2e8f0' },
   filterButton: { backgroundColor: '#334155', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
   filterButtonText: { fontWeight: '600', color: '#e2e8f0' },
-  row: { justifyContent: 'space-between', paddingHorizontal: 8, marginBottom: 6 },
+  row: { justifyContent: 'space-between', paddingHorizontal: 6, marginBottom: 4 },
   itemCard: { 
     width: CARD_WIDTH,
     backgroundColor: 'transparent',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   hexWrapper: { 
-    width: 108,
-    height: 108,
+    width: 120,
+    height: 120,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
   },
-  emojiContainer: { 
+  contentOverlay: { 
     position: 'absolute',
-    top: 32,
+    top: 22,
     alignItems: 'center',
+    width: 90,
   },
-  emoji: { fontSize: 42 },
-  itemName: { fontSize: 12, fontWeight: '700', color: '#f8fafc', textAlign: 'center', marginBottom: 2, lineHeight: 15, paddingHorizontal: 4 },
-  itemDays: { fontSize: 11, fontWeight: '800', color: '#94a3b8' },
-  itemBarcode: { fontSize: 8, color: '#64748b', marginTop: 2 },
+  emoji: { fontSize: 38, marginBottom: 2 },
+  itemName: { fontSize: 11, fontWeight: '700', color: '#f8fafc', textAlign: 'center', lineHeight: 13, paddingHorizontal: 2 },
+  itemDays: { fontSize: 10, fontWeight: '800', color: '#94a3b8' },
+  itemBarcode: { fontSize: 8, color: '#64748b', marginTop: 1 },
   emptyState: { alignItems: 'center', paddingTop: 80 },
   emptyText: { fontSize: 22, fontWeight: '600', color: '#64748b' },
   emptySubtext: { fontSize: 16, color: '#475569', marginTop: 8 },
