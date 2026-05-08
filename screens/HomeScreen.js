@@ -135,6 +135,7 @@ export default function HomeScreen({ navigation }) {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
+        <Text style={styles.title}>Pantry Pal 🥬</Text>
         <TouchableOpacity 
           style={styles.scanButton}
           onPress={() => navigation.navigate('Scan')}
@@ -212,7 +213,8 @@ export default function HomeScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f1e9' },
-  header: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', padding: 20, paddingTop: 60 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#3f2a1d' },
   scanButton: { backgroundColor: '#e8d9c2', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20 },
   scanButtonText: { fontSize: 22 },
   stats: { paddingHorizontal: 20, color: '#6b5b4f', marginBottom: 12 },
