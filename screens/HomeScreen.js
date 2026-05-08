@@ -4,6 +4,48 @@ import { loadItems } from '../utils/storage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// Separate Animated Tile Component
+const AnimatedTile = ({ item, urgency, getDaysLeftText, getPlaceholderImage }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const onPressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1.1,
+      friction: 3,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const onPressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 4,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  return (
+    <Animated.View style={[styles.itemCard, { 
+      shadowColor: urgency,
+      transform: [{ scale: scaleAnim }] 
+    }]}>
+      <TouchableWithoutFeedback onPressIn={onPressIn} onPressOut={onPressOut}>
+        <View style={styles.circleWrapper}>
+          <Image 
+            source={{ uri: getPlaceholderImage() }} 
+            style={styles.foodImage} 
+          />
+          <View style={styles.infoOverlay}>
+            <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+            <Text style={styles.itemDays}>{getDaysLeftText(item)}</Text>
+            <Text style={styles.itemExpiry}>{item.expiry || 'No date'}</Text>
+          </View>
+        </View>
+      </TouchableWithoutFeedback>
+    </Animated.View>
+  );
+};
+
 export default function HomeScreen({ navigation }) {
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
@@ -88,29 +130,6 @@ export default function HomeScreen({ navigation }) {
 
   const getPlaceholderImage = () => 'https://cdn-icons-png.flaticon.com/512/3081/3081559.png';
 
-  // Scale animation for each tile
-  const createScaleAnim = () => {
-    const scaleAnim = useRef(new Animated.Value(1)).current;
-
-    const onPressIn = () => {
-      Animated.spring(scaleAnim, {
-        toValue: 1.1,
-        friction: 3,
-        useNativeDriver: true,
-      }).start();
-    };
-
-    const onPressOut = () => {
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 4,
-        useNativeDriver: true,
-      }).start();
-    };
-
-    return { scaleAnim, onPressIn, onPressOut };
-  };
-
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -159,30 +178,14 @@ export default function HomeScreen({ navigation }) {
       >
         {filteredItems.map((item, index) => {
           const urgency = getUrgencyColor(item);
-          const { scaleAnim, onPressIn, onPressOut } = createScaleAnim();
-
           return (
-            <Animated.View 
-              key={item.id} 
-              style={[styles.itemCard, { 
-                shadowColor: urgency,
-                transform: [{ scale: scaleAnim }] 
-              }]}
-            >
-              <TouchableWithoutFeedback onPressIn={onPressIn} onPressOut={onPressOut}>
-                <View style={styles.circleWrapper}>
-                  <Image 
-                    source={{ uri: getPlaceholderImage() }} 
-                    style={styles.foodImage} 
-                  />
-                  <View style={styles.infoOverlay}>
-                    <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-                    <Text style={styles.itemDays}>{getDaysLeftText(item)}</Text>
-                    <Text style={styles.itemExpiry}>{item.expiry || 'No date'}</Text>
-                  </View>
-                </View>
-              </TouchableWithoutFeedback>
-            </Animated.View>
+            <AnimatedTile 
+              key={item.id}
+              item={item}
+              urgency={urgency}
+              getDaysLeftText={getDaysLeftText}
+              getPlaceholderImage={getPlaceholderImage}
+            />
           );
         })}
       </ScrollView>
