@@ -136,7 +136,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Omnidirectional Grid (Apple Watch style) */}
+      {/* Hex Grid */}
       <FlatList
         data={filteredItems}
         keyExtractor={item => item.id}
@@ -201,22 +201,22 @@ const styles = StyleSheet.create({
   itemCard: { 
     width: CARD_WIDTH,
     backgroundColor: '#1e293b',
-    padding: 18,
-    borderRadius: 28,
-    borderWidth: 4,
+    padding: 20,
+    borderRadius: 36, // More hex-like
+    borderWidth: 5,
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 18,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.6,
-    shadowRadius: 24,
-    elevation: 15,
-    transform: [{ rotate: '0.5deg' }], // slight hex tilt
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.7,
+    shadowRadius: 28,
+    elevation: 18,
+    transform: [{ rotate: '1deg' }],
   },
-  emoji: { fontSize: 52, marginBottom: 6 },
+  emoji: { fontSize: 56, marginBottom: 8 },
   itemName: { fontSize: 14, fontWeight: '700', color: '#f8fafc', textAlign: 'center', marginBottom: 4, lineHeight: 18 },
-  itemDays: { fontSize: 13, fontWeight: '700', color: '#94a3b8' },
-  itemBarcode: { fontSize: 10, color: '#64748b', marginTop: 4 },
+  itemDays: { fontSize: 14, fontWeight: '800', color: '#94a3b8' },
+  itemBarcode: { fontSize: 10, color: '#64748b', marginTop: 6 },
   emptyState: { alignItems: 'center', paddingTop: 80 },
   emptyText: { fontSize: 22, fontWeight: '600', color: '#64748b' },
   emptySubtext: { fontSize: 16, color: '#475569', marginTop: 8 },
