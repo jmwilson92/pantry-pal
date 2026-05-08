@@ -138,7 +138,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Uniform Honeycomb Grid */}
+      {/* Interlocking Honeycomb Grid */}
       <ScrollView 
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
@@ -146,8 +146,16 @@ export default function HomeScreen({ navigation }) {
       >
         {filteredItems.map((item, index) => {
           const urgency = getUrgencyColor(item);
+          const row = Math.floor(index / 2);
+          const isOddRow = row % 2 === 1;
           return (
-            <View key={item.id} style={[styles.itemCard, { shadowColor: urgency }]}>
+            <View 
+              key={item.id} 
+              style={[styles.itemCard, { 
+                shadowColor: urgency,
+                marginLeft: isOddRow ? 62 : 0 
+              }]}
+            >
               <View style={styles.hexWrapper}>
                 <Svg width={125} height={125} viewBox="0 0 100 100">
                   <Polygon
@@ -211,16 +219,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     flexWrap: 'wrap', 
     justifyContent: 'flex-start',
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     paddingBottom: 40,
-    gap: 8,
+    gap: 4,
   },
   itemCard: { 
-    width: 130,
+    width: 125,
     alignItems: 'center',
     shadowOffset: { width: -10, height: 0 },
     shadowOpacity: 0.85,
-    shadowRadius: 12,
+    shadowRadius: 10,
     elevation: 10,
   },
   hexWrapper: { 
@@ -231,7 +239,7 @@ const styles = StyleSheet.create({
   },
   contentOverlay: { 
     position: 'absolute',
-    top: 18,
+    top: 16,
     alignItems: 'center',
     width: 105,
   },
