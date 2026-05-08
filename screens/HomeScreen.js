@@ -110,6 +110,7 @@ export default function HomeScreen({ navigation }) {
   const changeSort = (mode) => {
     setSortBy(mode);
     applyFiltersAndSort(items, activeFilter, mode);
+    setShowFilterModal(false);
   };
 
   const getUrgencyColor = (item) => {
@@ -139,34 +140,19 @@ export default function HomeScreen({ navigation }) {
           style={styles.scanButton}
           onPress={() => navigation.navigate('Scan')}
         >
-          <Text style={styles.scanButtonText}>+ Scan</Text>
+          <Text style={styles.scanButtonText}>📷</Text>
         </TouchableOpacity>
       </View>
 
       <Text style={styles.stats}>You have {items.length} items • {filteredItems.length} shown</Text>
 
-      {/* Sort + Filter Row */}
-      <View style={styles.sortFilterRow}>
-        <View style={styles.sortButtons}>
-          <TouchableOpacity 
-            style={[styles.sortButton, sortBy === 'expiry' && styles.sortButtonActive]}
-            onPress={() => changeSort('expiry')}
-          >
-            <Text style={styles.sortText}>Expiry ↑</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.sortButton, sortBy === 'name' && styles.sortButtonActive]}
-            onPress={() => changeSort('name')}
-          >
-            <Text style={styles.sortText}>A-Z</Text>
-        </TouchableOpacity>
-        </View>
-
+      {/* Single Filter Button */}
+      <View style={styles.filterRow}>
         <TouchableOpacity 
           style={styles.filterButton}
           onPress={() => setShowFilterModal(true)}
         >
-          <Text style={styles.filterButtonText}>Filter: {activeFilter}</Text>
+          <Text style={styles.filterButtonText}>Filter: {activeFilter} • {sortBy === 'expiry' ? 'Expiry' : 'A-Z'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -190,11 +176,21 @@ export default function HomeScreen({ navigation }) {
         })}
       </ScrollView>
 
-      {/* Filter Modal */}
+      {/* Combined Filter Modal */}
       <Modal visible={showFilterModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Filter by Category</Text>
+            <Text style={styles.modalTitle}>Filter & Sort</Text>
+
+            <Text style={styles.modalSection}>Sort</Text>
+            <TouchableOpacity style={styles.modalOption} onPress={() => changeSort('expiry')}>
+              <Text style={styles.modalOptionText}>Expiry (Soonest First)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalOption} onPress={() => changeSort('name')}>
+              <Text style={styles.modalOptionText}>A-Z</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.modalSection}>Category</Text>
             {filters.map(filter => (
               <TouchableOpacity
                 key={filter}
@@ -204,6 +200,7 @@ export default function HomeScreen({ navigation }) {
                 <Text style={[styles.modalOptionText, activeFilter === filter && styles.modalOptionTextActive]}>{filter}</Text>
               </TouchableOpacity>
             ))}
+
             <TouchableOpacity style={styles.modalClose} onPress={() => setShowFilterModal(false)}>
               <Text style={styles.modalCloseText}>Close</Text>
             </TouchableOpacity>
@@ -215,19 +212,15 @@ export default function HomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f1e9' }, // Warm cream - appetizing & focused
+  container: { flex: 1, backgroundColor: '#f8f1e9' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#3f2a1d' },
-  scanButton: { backgroundColor: '#22c55e', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
-  scanButtonText: { color: '#000', fontWeight: 'bold', fontSize: 16 },
+  scanButton: { backgroundColor: '#22c55e', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 },
+  scanButtonText: { fontSize: 22 },
   stats: { paddingHorizontal: 20, color: '#6b5b4f', marginBottom: 12 },
-  sortFilterRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 12 },
-  sortButtons: { flexDirection: 'row', gap: 8 },
-  sortButton: { backgroundColor: '#e8d9c2', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
-  sortButtonActive: { backgroundColor: '#22c55e' },
-  sortText: { fontWeight: '600', color: '#3f2a1d' },
-  filterButton: { backgroundColor: '#e8d9c2', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
-  filterButtonText: { fontWeight: '600', color: '#3f2a1d' },
+  filterRow: { paddingHorizontal: 16, marginBottom: 12 },
+  filterButton: { backgroundColor: '#e8d9c2', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, alignSelf: 'flex-start' },
+  filterButtonText: { fontWeight: '600', color: '#3f2a1d', fontSize: 15 },
   gridContainer: { 
     paddingHorizontal: 12,
     paddingBottom: 40,
@@ -273,6 +266,7 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(63, 42, 29, 0.7)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: '#fff', borderRadius: 20, padding: 20, width: '85%', maxWidth: 320 },
   modalTitle: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20, color: '#3f2a1d' },
+  modalSection: { fontSize: 14, fontWeight: '700', color: '#6b5b4f', marginTop: 12, marginBottom: 6, paddingHorizontal: 4 },
   modalOption: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#f0e6d9' },
   modalOptionActive: { backgroundColor: '#f0e6d9' },
   modalOptionText: { fontSize: 17, textAlign: 'center', color: '#3f2a1d' },
