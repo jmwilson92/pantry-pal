@@ -179,7 +179,7 @@ export default function ScanScreen({ navigation }) {
         setShowCelebration(false);
         celebrationAnim.setValue(0);
       });
-    }, 3000); // Exactly 3 seconds
+    }, 3000);
   };
 
   if (!permission) return <Text style={styles.center}>Requesting camera...</Text>;
@@ -292,13 +292,13 @@ const styles = StyleSheet.create({
   instruction: { color: '#fff', fontSize: 16, marginTop: 30, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
   celebrationContainer: { 
     ...StyleSheet.absoluteFillObject, 
-    justifyContent: 'center', 
+    justifyContent: 'flex-start', // Force to top
     alignItems: 'center',
     zIndex: 100,
   },
   celebrationBanner: {
     position: 'absolute',
-    top: 40, // Clearly at the top
+    top: 40,
     backgroundColor: '#00ff9f',
     paddingHorizontal: 32,
     paddingVertical: 16,
