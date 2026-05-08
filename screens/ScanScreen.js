@@ -12,6 +12,7 @@ export default function ScanScreen({ navigation }) {
   const [pendingItem, setPendingItem] = useState(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const toastAnim = useRef(new Animated.Value(-400)).current;
   const scanLineAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -59,7 +60,7 @@ export default function ScanScreen({ navigation }) {
             text: 'Add with NA expiry', 
             onPress: () => {
               saveItem({ name: productName, barcode: data, expiry: 'NA' });
-              showToastMessage('Added to your pantry/fridge!');
+              showSlidingToast('Food added! ✅');
               setTimeout(() => {
                 setScanned(false);
                 navigation.navigate('Inventory');
@@ -76,8 +77,6 @@ export default function ScanScreen({ navigation }) {
         ]
       );
     } catch (e) {
-      // Completely removed the annoying barcode scanned popup
-      // Just reset and let user try again
       setScanned(false);
     }
   };
@@ -89,7 +88,7 @@ export default function ScanScreen({ navigation }) {
         barcode: pendingItem.barcode, 
         expiry: selectedDate.toISOString().split('T')[0] 
       });
-      showToastMessage('Added to your pantry/fridge!');
+      showSlidingToast('Food added! ✅');
       setTimeout(() => {
         setShowDateModal(false);
         setScanned(false);
@@ -99,10 +98,26 @@ export default function ScanScreen({ navigation }) {
     }
   };
 
-  const showToastMessage = (message) => {
+  const showSlidingToast = (message) => {
     setToastMessage(message);
     setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
+    
+    Animated.timing(toastAnim, {
+      toValue: 20,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
+    
+    setTimeout(() => {
+      Animated.timing(toastAnim, {
+        toValue: -400,
+        duration: 400,
+        useNativeDriver: true,
+      }).start(() => {
+        setShowToast(false);
+        toastAnim.setValue(-400);
+      });
+    }, 2000);
   };
 
   if (!permission) return <Text style={styles.center}>Requesting camera...</Text>;
@@ -138,9 +153,11 @@ export default function ScanScreen({ navigation }) {
       {scanned && <Button title="Scan Again" onPress={() => setScanned(false)} />}
 
       {showToast && (
-        <View style={styles.toast}>
+        <Animated.View 
+          style={[styles.toast, { transform: [{ translateX: toastAnim }] }]}
+        >
           <Text style={styles.toastText}>{toastMessage}</Text>
-        </View>
+        </Animated.View>
       )}
 
       <Modal visible={showDateModal} transparent animationType="fade">
@@ -182,7 +199,21 @@ const styles = StyleSheet.create({
   bottomRight: { bottom: -2, right: -2, borderLeftWidth: 0, borderTopWidth: 0 },
   scanLine: { position: 'absolute', left: 0, right: 0, height: 3, backgroundColor: '#00ff9f', shadowColor: '#00ff9f', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 10 },
   instruction: { color: '#fff', fontSize: 16, marginTop: 30, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
-  toast: { position: 'absolute', top: 60, left: 20, right: 20, backgroundColor: '#00ff9f', padding: 16, borderRadius: 12, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
+  toast: { 
+    position: 'absolute', 
+    top: 80, 
+    left: 0,
+    backgroundColor: '#00ff9f', 
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
   toastText: { color: '#000', fontSize: 16, fontWeight: 'bold' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, width: '90%', maxWidth: 380, alignItems: 'center' },
