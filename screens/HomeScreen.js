@@ -68,12 +68,29 @@ export default function HomeScreen({ navigation }) {
     applyFiltersAndSort(items, activeFilter, mode);
   };
 
+  const getCategoryEmoji = (name) => {
+    const n = name.toLowerCase();
+    if (n.includes('milk') || n.includes('cheese') || n.includes('yogurt') || n.includes('butter')) return '🥛';
+    if (n.includes('apple') || n.includes('banana') || n.includes('orange') || n.includes('berry')) return '🍎';
+    if (n.includes('carrot') || n.includes('lettuce') || n.includes('tomato') || n.includes('potato')) return '🥕';
+    if (n.includes('chicken') || n.includes('beef') || n.includes('pork') || n.includes('fish')) return '🍗';
+    return '🛒';
+  };
+
   const getUrgencyColor = (item) => {
-    if (!item.expiry || item.expiry === 'NA') return '#4ade80';
+    if (!item.expiry || item.expiry === 'NA') return '#22c55e';
     const daysLeft = Math.ceil((new Date(item.expiry) - new Date()) / (1000 * 60 * 60 * 24));
     if (daysLeft <= 2) return '#ef4444';
-    if (daysLeft <= 7) return '#fbbf24';
-    return '#4ade80';
+    if (daysLeft <= 7) return '#eab308';
+    return '#22c55e';
+  };
+
+  const getDaysLeftText = (item) => {
+    if (!item.expiry || item.expiry === 'NA') return 'No expiry';
+    const daysLeft = Math.ceil((new Date(item.expiry) - new Date()) / (1000 * 60 * 60 * 24));
+    if (daysLeft < 0) return 'Expired!';
+    if (daysLeft === 0) return 'Expires today';
+    return `${daysLeft} days left`;
   };
 
   return (
@@ -123,11 +140,14 @@ export default function HomeScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         renderItem={({ item }) => (
           <View style={[styles.itemCard, { borderLeftColor: getUrgencyColor(item) }]}>
-            <View style={styles.itemHeader}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemExpiry}>{item.expiry || 'No expiry'}</Text>
+            <View style={styles.itemContent}>
+              <Text style={styles.emoji}>{getCategoryEmoji(item.name)}</Text>
+              <View style={styles.itemTextContainer}>
+                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemDays}>{getDaysLeftText(item)}</Text>
+                <Text style={styles.itemBarcode}>Barcode: {item.barcode}</Text>
+              </View>
             </View>
-            <Text style={styles.itemBarcode}>Barcode: {item.barcode}</Text>
           </View>
         )}
         ListEmptyComponent={
@@ -163,34 +183,48 @@ export default function HomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
+  container: { flex: 1, backgroundColor: '#0f172a' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#0f172a' },
-  scanButton: { backgroundColor: '#00ff9f', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#fff' },
+  scanButton: { backgroundColor: '#22c55e', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
   scanButtonText: { color: '#000', fontWeight: 'bold', fontSize: 16 },
-  stats: { paddingHorizontal: 20, color: '#64748b', marginBottom: 12 },
+  stats: { paddingHorizontal: 20, color: '#94a3b8', marginBottom: 12 },
   sortFilterRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 12 },
   sortButtons: { flexDirection: 'row', gap: 8 },
-  sortButton: { backgroundColor: '#e2e8f0', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
-  sortButtonActive: { backgroundColor: '#00ff9f' },
-  sortText: { fontWeight: '600', color: '#475569' },
-  filterButton: { backgroundColor: '#e2e8f0', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
-  filterButtonText: { fontWeight: '600', color: '#475569' },
-  itemCard: { backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 10, padding: 16, borderRadius: 16, borderLeftWidth: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
-  itemHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  itemName: { fontSize: 18, fontWeight: 'bold', color: '#0f172a' },
-  itemExpiry: { fontSize: 14, color: '#64748b', fontWeight: '600' },
-  itemBarcode: { fontSize: 12, color: '#94a3b8', marginTop: 4 },
-  emptyState: { alignItems: 'center', paddingTop: 60 },
-  emptyText: { fontSize: 20, fontWeight: '600', color: '#64748b' },
-  emptySubtext: { fontSize: 16, color: '#94a3b8', marginTop: 8 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#fff', borderRadius: 20, padding: 20, width: '85%', maxWidth: 320 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
-  modalOption: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
-  modalOptionActive: { backgroundColor: '#f0fdf4' },
-  modalOptionText: { fontSize: 17, textAlign: 'center' },
-  modalOptionTextActive: { color: '#16a34a', fontWeight: '600' },
+  sortButton: { backgroundColor: '#334155', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
+  sortButtonActive: { backgroundColor: '#22c55e' },
+  sortText: { fontWeight: '600', color: '#e2e8f0' },
+  filterButton: { backgroundColor: '#334155', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
+  filterButtonText: { fontWeight: '600', color: '#e2e8f0' },
+  itemCard: { 
+    backgroundColor: '#1e293b', 
+    marginHorizontal: 16, 
+    marginBottom: 12, 
+    padding: 18, 
+    borderRadius: 20, 
+    borderLeftWidth: 6, 
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  itemContent: { flexDirection: 'row', alignItems: 'center' },
+  emoji: { fontSize: 42, marginRight: 16 },
+  itemTextContainer: { flex: 1 },
+  itemName: { fontSize: 20, fontWeight: '700', color: '#f8fafc', marginBottom: 4 },
+  itemDays: { fontSize: 16, fontWeight: '600', color: '#94a3b8', marginBottom: 4 },
+  itemBarcode: { fontSize: 12, color: '#64748b' },
+  emptyState: { alignItems: 'center', paddingTop: 80 },
+  emptyText: { fontSize: 22, fontWeight: '600', color: '#64748b' },
+  emptySubtext: { fontSize: 16, color: '#475569', marginTop: 8 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.8)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { backgroundColor: '#1e293b', borderRadius: 20, padding: 20, width: '85%', maxWidth: 320 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20, color: '#f8fafc' },
+  modalOption: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#334155' },
+  modalOptionActive: { backgroundColor: '#166534' },
+  modalOptionText: { fontSize: 17, textAlign: 'center', color: '#e2e8f0' },
+  modalOptionTextActive: { color: '#4ade80', fontWeight: '600' },
   modalClose: { marginTop: 16, alignSelf: 'center', paddingVertical: 10, paddingHorizontal: 30 },
-  modalCloseText: { color: '#64748b', fontWeight: '600' },
+  modalCloseText: { color: '#94a3b8', fontWeight: '600' },
 });
