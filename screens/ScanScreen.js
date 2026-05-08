@@ -31,6 +31,8 @@ export default function ScanScreen({ navigation }) {
         scale: new Animated.Value(0.5),
         opacity: new Animated.Value(1),
         rotate: new Animated.Value(0),
+        translateX: new Animated.Value(0),
+        translateY: new Animated.Value(0),
       };
       snackAnims.push(anim);
     }
@@ -136,7 +138,12 @@ export default function ScanScreen({ navigation }) {
       
       setTimeout(() => {
         Animated.parallel([
-          Animated.timing(snack.y, {
+          Animated.timing(snack.translateX, {
+            toValue: randomX,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(snack.translateY, {
             toValue: randomY,
             duration: 800,
             useNativeDriver: true,
@@ -234,6 +241,8 @@ export default function ScanScreen({ navigation }) {
                 fontSize: 28,
                 opacity: snack.opacity,
                 transform: [
+                  { translateX: snack.translateX },
+                  { translateY: snack.translateY },
                   { scale: snack.scale },
                   { rotate: snack.rotate.interpolate({
                     inputRange: [-1, 1],
