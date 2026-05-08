@@ -10,7 +10,7 @@ const AnimatedTile = ({ item, urgency, getDaysLeftText, getPlaceholderImage }) =
 
   const onPressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 1.1,
+      toValue: 1.08,
       friction: 3,
       useNativeDriver: true,
     }).start();
@@ -30,7 +30,7 @@ const AnimatedTile = ({ item, urgency, getDaysLeftText, getPlaceholderImage }) =
       transform: [{ scale: scaleAnim }] 
     }]}>
       <TouchableWithoutFeedback onPressIn={onPressIn} onPressOut={onPressOut}>
-        <View style={styles.circleWrapper}>
+        <View style={styles.roundedWrapper}>
           <Image 
             source={{ uri: getPlaceholderImage() }} 
             style={styles.foodImage} 
@@ -38,7 +38,7 @@ const AnimatedTile = ({ item, urgency, getDaysLeftText, getPlaceholderImage }) =
           <View style={styles.infoOverlay}>
             <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
             <Text style={styles.itemDays}>{getDaysLeftText(item)}</Text>
-            <Text style={styles.itemExpiry}>{item.expiry || 'No date'}</Text>
+            <Text style={styles.itemExpiry}>Expiry: {item.expiry || 'No date'}</Text>
           </View>
         </View>
       </TouchableWithoutFeedback>
@@ -170,7 +170,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Circle Grid with Scale Animation */}
+      {/* Rounded Rectangle Grid */}
       <ScrollView 
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
@@ -231,19 +231,19 @@ const styles = StyleSheet.create({
   gridContainer: { 
     flexDirection: 'row', 
     flexWrap: 'wrap', 
-    justifyContent: 'flex-start',
-    paddingHorizontal: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
     paddingBottom: 40,
-    gap: 10,
+    gap: 14,
   },
   itemCard: { 
-    width: 210,
+    width: (SCREEN_WIDTH - 60) / 2,
     alignItems: 'center',
   },
-  circleWrapper: { 
-    width: 200,
+  roundedWrapper: { 
+    width: '100%',
     height: 200,
-    borderRadius: 999,
+    borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: '#1e293b',
     shadowColor: '#000',
