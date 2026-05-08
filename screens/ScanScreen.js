@@ -76,7 +76,6 @@ export default function ScanScreen({ navigation }) {
         ]
       );
     } catch (e) {
-      // No more annoying barcode scanned popup
       Alert.alert('Item not found in database', `Barcode: ${data}`, [
         { text: 'Add Manually', onPress: () => { setScanned(false); navigation.navigate('Inventory'); } }
       ]);
@@ -186,10 +185,10 @@ const styles = StyleSheet.create({
   toast: { position: 'absolute', top: 60, left: 20, right: 20, backgroundColor: '#00ff9f', padding: 16, borderRadius: 12, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
   toastText: { color: '#000', fontSize: 16, fontWeight: 'bold' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#1a1a1a', borderRadius: 20, padding: 24, width: '90%', maxWidth: 380, alignItems: 'center' },
-  modalTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
+  modalContent: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, width: '90%', maxWidth: 380, alignItems: 'center' },
+  modalTitle: { color: '#000000', fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
   modalButtons: { flexDirection: 'row', gap: 12, marginTop: 20 },
-  cancelBtn: { backgroundColor: '#333', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
+  cancelBtn: { backgroundColor: '#f0f0f0', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
   confirmBtn: { backgroundColor: '#00ff9f', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
-  btnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  btnText: { color: '#000000', fontSize: 16, fontWeight: '600' },
 });
