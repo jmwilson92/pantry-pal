@@ -10,8 +10,8 @@ const AnimatedTile = ({ item, urgency, getDaysLeftText, getPlaceholderImage }) =
 
   const onPressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 1.08,
-      friction: 3,
+      toValue: 1.03,
+      friction: 4,
       useNativeDriver: true,
     }).start();
   };
@@ -19,7 +19,7 @@ const AnimatedTile = ({ item, urgency, getDaysLeftText, getPlaceholderImage }) =
   const onPressOut = () => {
     Animated.spring(scaleAnim, {
       toValue: 1,
-      friction: 4,
+      friction: 5,
       useNativeDriver: true,
     }).start();
   };
@@ -170,7 +170,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Rounded Rectangle Grid */}
+      {/* Full Width Single Column Grid */}
       <ScrollView 
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
@@ -229,28 +229,25 @@ const styles = StyleSheet.create({
   filterButton: { backgroundColor: '#334155', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
   filterButtonText: { fontWeight: '600', color: '#e2e8f0' },
   gridContainer: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingBottom: 40,
-    gap: 14,
+    gap: 12,
   },
   itemCard: { 
-    width: (SCREEN_WIDTH - 60) / 2,
+    width: '100%',
     alignItems: 'center',
   },
   roundedWrapper: { 
     width: '100%',
-    height: 200,
-    borderRadius: 24,
+    height: 180,
+    borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: '#1e293b',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
   },
   foodImage: { 
     width: '100%',
@@ -264,12 +261,12 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: 'rgba(0,0,0,0.75)',
     paddingVertical: 10,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     alignItems: 'center',
   },
-  itemName: { fontSize: 13, fontWeight: '700', color: '#fff', textAlign: 'center' },
-  itemDays: { fontSize: 12, fontWeight: '800', color: '#4ade80' },
-  itemExpiry: { fontSize: 11, color: '#94a3b8', marginTop: 2 },
+  itemName: { fontSize: 15, fontWeight: '700', color: '#fff', textAlign: 'center' },
+  itemDays: { fontSize: 13, fontWeight: '800', color: '#4ade80' },
+  itemExpiry: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
   emptyState: { alignItems: 'center', paddingTop: 80 },
   emptyText: { fontSize: 22, fontWeight: '600', color: '#64748b' },
   emptySubtext: { fontSize: 16, color: '#475569', marginTop: 8 },
