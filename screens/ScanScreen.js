@@ -179,7 +179,7 @@ export default function ScanScreen({ navigation }) {
         setShowCelebration(false);
         celebrationAnim.setValue(0);
       });
-    }, 3000); // 3 seconds
+    }, 4000); // 4 seconds
   };
 
   if (!permission) return <Text style={styles.center}>Requesting camera...</Text>;
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   },
   celebrationBanner: {
     position: 'absolute',
-    top: 10, // Even higher - very top
+    top: 80, // Same area as modal pop-up
     backgroundColor: '#00ff9f',
     paddingHorizontal: 32,
     paddingVertical: 16,
