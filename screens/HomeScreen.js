@@ -140,7 +140,7 @@ export default function HomeScreen({ navigation }) {
           style={styles.scanButton}
           onPress={() => navigation.navigate('Scan')}
         >
-          <Text style={styles.scanButtonText}>||||| |||| |||| |||| ||||</Text>
+          <Text style={styles.scanButtonText}>𝄃𝄃𝄂𝄂𝄀𝄁𝄃𝄂𝄂𝄃</Text>
         </TouchableOpacity>
       </View>
 
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#3f2a1d' },
   scanButton: { backgroundColor: '#22c55e', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20 },
-  scanButtonText: { fontSize: 14, color: '#000', fontWeight: 'bold', letterSpacing: 1.5 },
+  scanButtonText: { fontSize: 22 },
   stats: { paddingHorizontal: 20, color: '#6b5b4f', marginBottom: 12 },
   filterRow: { paddingHorizontal: 16, marginBottom: 12 },
   filterButton: { backgroundColor: '#e8d9c2', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, alignSelf: 'flex-start' },
