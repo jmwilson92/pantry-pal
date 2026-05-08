@@ -138,9 +138,8 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Omnidirectional Compact Hex Grid */}
+      {/* True Omnidirectional Compact Hex Grid */}
       <ScrollView 
-        horizontal={false}
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
@@ -150,7 +149,7 @@ export default function HomeScreen({ navigation }) {
           return (
             <View key={item.id} style={[styles.itemCard, { shadowColor: urgency }]}>
               <View style={styles.hexWrapper}>
-                <Svg width={135} height={135} viewBox="0 0 100 100">
+                <Svg width={120} height={120} viewBox="0 0 100 100">
                   <Polygon
                     points={hexPoints}
                     fill="#1e293b"
@@ -212,34 +211,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     flexWrap: 'wrap', 
     justifyContent: 'flex-start',
-    paddingHorizontal: 4,
+    paddingHorizontal: 2,
     paddingBottom: 40,
-    gap: 4,
+    gap: 2,
   },
   itemCard: { 
-    width: 140,
+    width: 125,
     alignItems: 'center',
-    shadowOffset: { width: -15, height: 0 },
+    shadowOffset: { width: -12, height: 0 },
     shadowOpacity: 0.9,
-    shadowRadius: 14,
-    elevation: 12,
+    shadowRadius: 10,
+    elevation: 10,
   },
   hexWrapper: { 
-    width: 135,
-    height: 135,
+    width: 120,
+    height: 120,
     alignItems: 'center',
     justifyContent: 'center',
   },
   contentOverlay: { 
     position: 'absolute',
-    top: 18,
+    top: 16,
     alignItems: 'center',
-    width: 105,
+    width: 100,
   },
-  emoji: { fontSize: 38, marginBottom: 2 },
-  itemName: { fontSize: 11, fontWeight: '700', color: '#f8fafc', textAlign: 'center', lineHeight: 13, paddingHorizontal: 2 },
-  itemDays: { fontSize: 10, fontWeight: '800', color: '#94a3b8' },
-  itemExpiry: { fontSize: 9, color: '#64748b', marginTop: 1 },
+  emoji: { fontSize: 36, marginBottom: 2 },
+  itemName: { fontSize: 10, fontWeight: '700', color: '#f8fafc', textAlign: 'center', lineHeight: 12, paddingHorizontal: 2 },
+  itemDays: { fontSize: 9, fontWeight: '800', color: '#94a3b8' },
+  itemExpiry: { fontSize: 8, color: '#64748b', marginTop: 1 },
   emptyState: { alignItems: 'center', paddingTop: 80 },
   emptyText: { fontSize: 22, fontWeight: '600', color: '#64748b' },
   emptySubtext: { fontSize: 16, color: '#475569', marginTop: 8 },
