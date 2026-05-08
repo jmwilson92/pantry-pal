@@ -136,7 +136,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Inventory Grid (Apple Watch style) */}
+      {/* Omnidirectional Grid (Apple Watch style) */}
       <FlatList
         data={filteredItems}
         keyExtractor={item => item.id}
@@ -146,9 +146,9 @@ export default function HomeScreen({ navigation }) {
         renderItem={({ item }) => (
           <View style={[styles.itemCard, { borderColor: getUrgencyColor(item) }]}>
             <Text style={styles.emoji}>{getCategoryEmoji(item.name)}</Text>
-            <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+            <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
             <Text style={styles.itemDays}>{getDaysLeftText(item)}</Text>
-            <Text style={styles.itemBarcode} numberOfLines={1}>#{item.barcode}</Text>
+            <Text style={styles.itemBarcode}>#{item.barcode}</Text>
           </View>
         )}
         ListEmptyComponent={
@@ -197,25 +197,26 @@ const styles = StyleSheet.create({
   sortText: { fontWeight: '600', color: '#e2e8f0' },
   filterButton: { backgroundColor: '#334155', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
   filterButtonText: { fontWeight: '600', color: '#e2e8f0' },
-  row: { justifyContent: 'space-between', paddingHorizontal: 16 },
+  row: { justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 8 },
   itemCard: { 
     width: CARD_WIDTH,
     backgroundColor: '#1e293b',
-    padding: 16,
-    borderRadius: 24,
-    borderWidth: 3,
+    padding: 18,
+    borderRadius: 28,
+    borderWidth: 4,
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.6,
+    shadowRadius: 24,
+    elevation: 15,
+    transform: [{ rotate: '0.5deg' }], // slight hex tilt
   },
-  emoji: { fontSize: 48, marginBottom: 8 },
-  itemName: { fontSize: 15, fontWeight: '700', color: '#f8fafc', textAlign: 'center', marginBottom: 4 },
-  itemDays: { fontSize: 13, fontWeight: '600', color: '#94a3b8', marginBottom: 2 },
-  itemBarcode: { fontSize: 10, color: '#64748b', textAlign: 'center' },
+  emoji: { fontSize: 52, marginBottom: 6 },
+  itemName: { fontSize: 14, fontWeight: '700', color: '#f8fafc', textAlign: 'center', marginBottom: 4, lineHeight: 18 },
+  itemDays: { fontSize: 13, fontWeight: '700', color: '#94a3b8' },
+  itemBarcode: { fontSize: 10, color: '#64748b', marginTop: 4 },
   emptyState: { alignItems: 'center', paddingTop: 80 },
   emptyText: { fontSize: 22, fontWeight: '600', color: '#64748b' },
   emptySubtext: { fontSize: 16, color: '#475569', marginTop: 8 },
