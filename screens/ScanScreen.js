@@ -76,9 +76,9 @@ export default function ScanScreen({ navigation }) {
         ]
       );
     } catch (e) {
-      Alert.alert('Item not found in database', `Barcode: ${data}`, [
-        { text: 'Add Manually', onPress: () => { setScanned(false); navigation.navigate('Inventory'); } }
-      ]);
+      // Completely removed the annoying barcode scanned popup
+      // Just reset and let user try again
+      setScanned(false);
     }
   };
 
