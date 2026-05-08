@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, Dimensions } from 'react-native';
 import { loadItems } from '../utils/storage';
-import Svg, { Polygon } from 'react-native-svg';
+import Svg, { Polygon, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = (SCREEN_WIDTH - 48) / 2;
+const CARD_WIDTH = (SCREEN_WIDTH - 32) / 2;
 
 export default function HomeScreen({ navigation }) {
   const [items, setItems] = useState([]);
@@ -97,7 +97,6 @@ export default function HomeScreen({ navigation }) {
     return `${daysLeft}d`;
   };
 
-  // Hexagon points
   const hexPoints = '50,5 95,25 95,75 50,95 5,75 5,25';
 
   return (
@@ -129,7 +128,7 @@ export default function HomeScreen({ navigation }) {
             onPress={() => changeSort('name')}
           >
             <Text style={styles.sortText}>A-Z</Text>
-          </TouchableOpacity>
+        </TouchableOpacity>
         </View>
 
         <TouchableOpacity 
@@ -140,33 +139,42 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Real Hex Grid */}
+      {/* Hex Grid - Tight + Clean */}
       <FlatList
         data={filteredItems}
         keyExtractor={item => item.id}
         numColumns={2}
         columnWrapperStyle={styles.row}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        renderItem={({ item }) => (
-          <View style={styles.itemCard}>
-            <View style={styles.hexWrapper}>
-              <Svg width={110} height={110} viewBox="0 0 100 100">
-                <Polygon
-                  points={hexPoints}
-                  fill="#1e293b"
-                  stroke={getUrgencyColor(item)}
-                  strokeWidth="7"
-                />
-              </Svg>
-              <View style={styles.emojiContainer}>
-                <Text style={styles.emoji}>{getCategoryEmoji(item.name)}</Text>
+        renderItem={({ item }) => {
+          const urgency = getUrgencyColor(item);
+          return (
+            <View style={styles.itemCard}>
+              <View style={styles.hexWrapper}>
+                <Svg width={108} height={108} viewBox="0 0 100 100">
+                  <Defs>
+                    <LinearGradient id="leftGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <Stop offset="0%" stopColor={urgency} stopOpacity="0.9" />
+                      <Stop offset="35%" stopColor="#1e293b" stopOpacity="1" />
+                    </LinearGradient>
+                  </Defs>
+                  <Polygon
+                    points={hexPoints}
+                    fill="url(#leftGradient)"
+                    stroke="#334155"
+                    strokeWidth="3"
+                  />
+                </Svg>
+                <View style={styles.emojiContainer}>
+                  <Text style={styles.emoji}>{getCategoryEmoji(item.name)}</Text>
+                </View>
               </View>
+              <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
+              <Text style={styles.itemDays}>{getDaysLeftText(item)}</Text>
+              <Text style={styles.itemBarcode}>#{item.barcode}</Text>
             </View>
-            <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
-            <Text style={styles.itemDays}>{getDaysLeftText(item)}</Text>
-            <Text style={styles.itemBarcode}>#{item.barcode}</Text>
-          </View>
-        )}
+          );
+        }}
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>No items yet</Text>
@@ -213,29 +221,29 @@ const styles = StyleSheet.create({
   sortText: { fontWeight: '600', color: '#e2e8f0' },
   filterButton: { backgroundColor: '#334155', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
   filterButtonText: { fontWeight: '600', color: '#e2e8f0' },
-  row: { justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 8 },
+  row: { justifyContent: 'space-between', paddingHorizontal: 8, marginBottom: 6 },
   itemCard: { 
     width: CARD_WIDTH,
     backgroundColor: 'transparent',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 6,
   },
   hexWrapper: { 
-    width: 110,
-    height: 110,
+    width: 108,
+    height: 108,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   emojiContainer: { 
     position: 'absolute',
-    top: 30,
+    top: 32,
     alignItems: 'center',
   },
-  emoji: { fontSize: 44 },
-  itemName: { fontSize: 13, fontWeight: '700', color: '#f8fafc', textAlign: 'center', marginBottom: 3, lineHeight: 17 },
-  itemDays: { fontSize: 13, fontWeight: '800', color: '#94a3b8' },
-  itemBarcode: { fontSize: 9, color: '#64748b', marginTop: 4 },
+  emoji: { fontSize: 42 },
+  itemName: { fontSize: 12, fontWeight: '700', color: '#f8fafc', textAlign: 'center', marginBottom: 2, lineHeight: 15, paddingHorizontal: 4 },
+  itemDays: { fontSize: 11, fontWeight: '800', color: '#94a3b8' },
+  itemBarcode: { fontSize: 8, color: '#64748b', marginTop: 2 },
   emptyState: { alignItems: 'center', paddingTop: 80 },
   emptyText: { fontSize: 22, fontWeight: '600', color: '#64748b' },
   emptySubtext: { fontSize: 16, color: '#475569', marginTop: 8 },
