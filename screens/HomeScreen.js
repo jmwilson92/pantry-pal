@@ -138,7 +138,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* True Omnidirectional Compact Hex Grid */}
+      {/* Honeycomb Interlocked Hex Grid */}
       <ScrollView 
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
@@ -146,10 +146,17 @@ export default function HomeScreen({ navigation }) {
       >
         {filteredItems.map((item, index) => {
           const urgency = getUrgencyColor(item);
+          const isOddRow = Math.floor(index / 2) % 2 === 1;
           return (
-            <View key={item.id} style={[styles.itemCard, { shadowColor: urgency }]}>
+            <View 
+              key={item.id} 
+              style={[styles.itemCard, { 
+                shadowColor: urgency,
+                marginLeft: isOddRow ? 60 : 0 
+              }]}
+            >
               <View style={styles.hexWrapper}>
-                <Svg width={120} height={120} viewBox="0 0 100 100">
+                <Svg width={130} height={130} viewBox="0 0 100 100">
                   <Polygon
                     points={hexPoints}
                     fill="#1e293b"
@@ -211,12 +218,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     flexWrap: 'wrap', 
     justifyContent: 'flex-start',
-    paddingHorizontal: 2,
+    paddingHorizontal: 4,
     paddingBottom: 40,
-    gap: 2,
+    gap: 4,
   },
   itemCard: { 
-    width: 125,
+    width: 130,
     alignItems: 'center',
     shadowOffset: { width: -12, height: 0 },
     shadowOpacity: 0.9,
@@ -224,21 +231,21 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   hexWrapper: { 
-    width: 120,
-    height: 120,
+    width: 130,
+    height: 130,
     alignItems: 'center',
     justifyContent: 'center',
   },
   contentOverlay: { 
     position: 'absolute',
-    top: 16,
+    top: 18,
     alignItems: 'center',
-    width: 100,
+    width: 105,
   },
-  emoji: { fontSize: 36, marginBottom: 2 },
-  itemName: { fontSize: 10, fontWeight: '700', color: '#f8fafc', textAlign: 'center', lineHeight: 12, paddingHorizontal: 2 },
-  itemDays: { fontSize: 9, fontWeight: '800', color: '#94a3b8' },
-  itemExpiry: { fontSize: 8, color: '#64748b', marginTop: 1 },
+  emoji: { fontSize: 38, marginBottom: 2 },
+  itemName: { fontSize: 11, fontWeight: '700', color: '#f8fafc', textAlign: 'center', lineHeight: 13, paddingHorizontal: 2 },
+  itemDays: { fontSize: 10, fontWeight: '800', color: '#94a3b8' },
+  itemExpiry: { fontSize: 9, color: '#64748b', marginTop: 1 },
   emptyState: { alignItems: 'center', paddingTop: 80 },
   emptyText: { fontSize: 22, fontWeight: '600', color: '#64748b' },
   emptySubtext: { fontSize: 16, color: '#475569', marginTop: 8 },
