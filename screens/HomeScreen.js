@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Modal, Dimensions, Image } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Modal, Dimensions, Image, Animated, TouchableWithoutFeedback } from 'react-native';
 import { loadItems } from '../utils/storage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -86,8 +86,30 @@ export default function HomeScreen({ navigation }) {
     return `${daysLeft}d`;
   };
 
-  // Generic placeholder image (shopping cart)
   const getPlaceholderImage = () => 'https://cdn-icons-png.flaticon.com/512/3081/3081559.png';
+
+  // Scale animation for each tile
+  const createScaleAnim = () => {
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+
+    const onPressIn = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 1.1,
+        friction: 3,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const onPressOut = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 4,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    return { scaleAnim, onPressIn, onPressOut };
+  };
 
   return (
     <View style={styles.container}>
@@ -129,7 +151,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Circle Grid with Photos */}
+      {/* Circle Grid with Scale Animation */}
       <ScrollView 
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
@@ -137,20 +159,30 @@ export default function HomeScreen({ navigation }) {
       >
         {filteredItems.map((item, index) => {
           const urgency = getUrgencyColor(item);
+          const { scaleAnim, onPressIn, onPressOut } = createScaleAnim();
+
           return (
-            <View key={item.id} style={[styles.itemCard, { shadowColor: urgency }]}>
-              <View style={styles.circleWrapper}>
-                <Image 
-                  source={{ uri: getPlaceholderImage() }} 
-                  style={styles.foodImage} 
-                />
-                <View style={styles.infoOverlay}>
-                  <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-                  <Text style={styles.itemDays}>{getDaysLeftText(item)}</Text>
-                  <Text style={styles.itemExpiry}>{item.expiry || 'No date'}</Text>
+            <Animated.View 
+              key={item.id} 
+              style={[styles.itemCard, { 
+                shadowColor: urgency,
+                transform: [{ scale: scaleAnim }] 
+              }]}
+            >
+              <TouchableWithoutFeedback onPressIn={onPressIn} onPressOut={onPressOut}>
+                <View style={styles.circleWrapper}>
+                  <Image 
+                    source={{ uri: getPlaceholderImage() }} 
+                    style={styles.foodImage} 
+                  />
+                  <View style={styles.infoOverlay}>
+                    <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+                    <Text style={styles.itemDays}>{getDaysLeftText(item)}</Text>
+                    <Text style={styles.itemExpiry}>{item.expiry || 'No date'}</Text>
+                  </View>
                 </View>
-              </View>
-            </View>
+              </TouchableWithoutFeedback>
+            </Animated.View>
           );
         })}
       </ScrollView>
@@ -204,10 +236,6 @@ const styles = StyleSheet.create({
   itemCard: { 
     width: 210,
     alignItems: 'center',
-    shadowOffset: { width: -12, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 14,
-    elevation: 12,
   },
   circleWrapper: { 
     width: 200,
