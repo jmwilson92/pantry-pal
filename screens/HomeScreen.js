@@ -138,7 +138,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Honeycomb Interlocked Hex Grid */}
+      {/* Uniform Honeycomb Grid */}
       <ScrollView 
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
@@ -146,17 +146,10 @@ export default function HomeScreen({ navigation }) {
       >
         {filteredItems.map((item, index) => {
           const urgency = getUrgencyColor(item);
-          const isOddRow = Math.floor(index / 2) % 2 === 1;
           return (
-            <View 
-              key={item.id} 
-              style={[styles.itemCard, { 
-                shadowColor: urgency,
-                marginLeft: isOddRow ? 60 : 0 
-              }]}
-            >
+            <View key={item.id} style={[styles.itemCard, { shadowColor: urgency }]}>
               <View style={styles.hexWrapper}>
-                <Svg width={130} height={130} viewBox="0 0 100 100">
+                <Svg width={125} height={125} viewBox="0 0 100 100">
                   <Polygon
                     points={hexPoints}
                     fill="#1e293b"
@@ -218,21 +211,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     flexWrap: 'wrap', 
     justifyContent: 'flex-start',
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
     paddingBottom: 40,
-    gap: 4,
+    gap: 8,
   },
   itemCard: { 
     width: 130,
     alignItems: 'center',
-    shadowOffset: { width: -12, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 10,
+    shadowOffset: { width: -10, height: 0 },
+    shadowOpacity: 0.85,
+    shadowRadius: 12,
     elevation: 10,
   },
   hexWrapper: { 
-    width: 130,
-    height: 130,
+    width: 125,
+    height: 125,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -242,7 +235,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 105,
   },
-  emoji: { fontSize: 38, marginBottom: 2 },
+  emoji: { fontSize: 36, marginBottom: 2 },
   itemName: { fontSize: 11, fontWeight: '700', color: '#f8fafc', textAlign: 'center', lineHeight: 13, paddingHorizontal: 2 },
   itemDays: { fontSize: 10, fontWeight: '800', color: '#94a3b8' },
   itemExpiry: { fontSize: 9, color: '#64748b', marginTop: 1 },
