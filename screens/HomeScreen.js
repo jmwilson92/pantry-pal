@@ -140,6 +140,7 @@ export default function HomeScreen({ navigation }) {
 
       {/* Omnidirectional Compact Hex Grid */}
       <ScrollView 
+        horizontal={false}
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
@@ -149,7 +150,7 @@ export default function HomeScreen({ navigation }) {
           return (
             <View key={item.id} style={[styles.itemCard, { shadowColor: urgency }]}>
               <View style={styles.hexWrapper}>
-                <Svg width={140} height={140} viewBox="0 0 100 100">
+                <Svg width={135} height={135} viewBox="0 0 100 100">
                   <Polygon
                     points={hexPoints}
                     fill="#1e293b"
@@ -213,29 +214,29 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     paddingHorizontal: 4,
     paddingBottom: 40,
-    gap: 6,
+    gap: 4,
   },
   itemCard: { 
-    width: 145,
+    width: 140,
     alignItems: 'center',
-    shadowOffset: { width: -8, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 12,
-    elevation: 10,
+    shadowOffset: { width: -15, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 14,
+    elevation: 12,
   },
   hexWrapper: { 
-    width: 140,
-    height: 140,
+    width: 135,
+    height: 135,
     alignItems: 'center',
     justifyContent: 'center',
   },
   contentOverlay: { 
     position: 'absolute',
-    top: 20,
+    top: 18,
     alignItems: 'center',
     width: 105,
   },
-  emoji: { fontSize: 40, marginBottom: 2 },
+  emoji: { fontSize: 38, marginBottom: 2 },
   itemName: { fontSize: 11, fontWeight: '700', color: '#f8fafc', textAlign: 'center', lineHeight: 13, paddingHorizontal: 2 },
   itemDays: { fontSize: 10, fontWeight: '800', color: '#94a3b8' },
   itemExpiry: { fontSize: 9, color: '#64748b', marginTop: 1 },
