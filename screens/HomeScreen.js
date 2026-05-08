@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Modal, Dimensions } from 'react-native';
 import { loadItems } from '../utils/storage';
-import Svg, { Polygon, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Polygon } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -138,7 +138,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Omnidirectional Hex Grid - Bigger Tiles */}
+      {/* Omnidirectional Compact Hex Grid */}
       <ScrollView 
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
@@ -147,20 +147,14 @@ export default function HomeScreen({ navigation }) {
         {filteredItems.map((item, index) => {
           const urgency = getUrgencyColor(item);
           return (
-            <View key={item.id} style={styles.itemCard}>
+            <View key={item.id} style={[styles.itemCard, { shadowColor: urgency }]}>
               <View style={styles.hexWrapper}>
-                <Svg width={150} height={150} viewBox="0 0 100 100">
-                  <Defs>
-                    <LinearGradient id={`leftGradient${index}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                      <Stop offset="0%" stopColor={urgency} stopOpacity="1" />
-                      <Stop offset="50%" stopColor="#1e293b" stopOpacity="1" />
-                    </LinearGradient>
-                  </Defs>
+                <Svg width={140} height={140} viewBox="0 0 100 100">
                   <Polygon
                     points={hexPoints}
-                    fill={`url(#leftGradient${index})`}
+                    fill="#1e293b"
                     stroke="#334155"
-                    strokeWidth="5"
+                    strokeWidth="4"
                   />
                 </Svg>
                 <View style={styles.contentOverlay}>
@@ -217,27 +211,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     flexWrap: 'wrap', 
     justifyContent: 'flex-start',
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     paddingBottom: 40,
-    gap: 8,
+    gap: 6,
   },
   itemCard: { 
-    width: 155,
+    width: 145,
     alignItems: 'center',
+    shadowOffset: { width: -8, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 12,
+    elevation: 10,
   },
   hexWrapper: { 
-    width: 150,
-    height: 150,
+    width: 140,
+    height: 140,
     alignItems: 'center',
     justifyContent: 'center',
   },
   contentOverlay: { 
     position: 'absolute',
-    top: 22,
+    top: 20,
     alignItems: 'center',
-    width: 110,
+    width: 105,
   },
-  emoji: { fontSize: 42, marginBottom: 2 },
+  emoji: { fontSize: 40, marginBottom: 2 },
   itemName: { fontSize: 11, fontWeight: '700', color: '#f8fafc', textAlign: 'center', lineHeight: 13, paddingHorizontal: 2 },
   itemDays: { fontSize: 10, fontWeight: '800', color: '#94a3b8' },
   itemExpiry: { fontSize: 9, color: '#64748b', marginTop: 1 },
