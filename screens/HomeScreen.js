@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, Dimensions } from 'react-native';
 import { loadItems } from '../utils/storage';
+import Svg, { Polygon } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - 48) / 2;
@@ -96,6 +97,9 @@ export default function HomeScreen({ navigation }) {
     return `${daysLeft}d`;
   };
 
+  // Hexagon points
+  const hexPoints = '50,5 95,25 95,75 50,95 5,75 5,25';
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -136,7 +140,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Grid */}
+      {/* Real Hex Grid */}
       <FlatList
         data={filteredItems}
         keyExtractor={item => item.id}
@@ -144,8 +148,20 @@ export default function HomeScreen({ navigation }) {
         columnWrapperStyle={styles.row}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         renderItem={({ item }) => (
-          <View style={[styles.itemCard, { borderColor: getUrgencyColor(item) }]}>
-            <Text style={styles.emoji}>{getCategoryEmoji(item.name)}</Text>
+          <View style={styles.itemCard}>
+            <View style={styles.hexWrapper}>
+              <Svg width={110} height={110} viewBox="0 0 100 100">
+                <Polygon
+                  points={hexPoints}
+                  fill="#1e293b"
+                  stroke={getUrgencyColor(item)}
+                  strokeWidth="7"
+                />
+              </Svg>
+              <View style={styles.emojiContainer}>
+                <Text style={styles.emoji}>{getCategoryEmoji(item.name)}</Text>
+              </View>
+            </View>
             <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
             <Text style={styles.itemDays}>{getDaysLeftText(item)}</Text>
             <Text style={styles.itemBarcode}>#{item.barcode}</Text>
@@ -200,22 +216,26 @@ const styles = StyleSheet.create({
   row: { justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 8 },
   itemCard: { 
     width: CARD_WIDTH,
-    backgroundColor: '#1e293b',
-    padding: 18,
-    borderRadius: 24,
-    borderWidth: 5,
+    backgroundColor: 'transparent',
     alignItems: 'center',
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.6,
-    shadowRadius: 24,
-    elevation: 15,
   },
-  emoji: { fontSize: 48, marginBottom: 8 },
-  itemName: { fontSize: 14, fontWeight: '700', color: '#f8fafc', textAlign: 'center', marginBottom: 4 },
-  itemDays: { fontSize: 13, fontWeight: '700', color: '#94a3b8' },
-  itemBarcode: { fontSize: 10, color: '#64748b', marginTop: 4 },
+  hexWrapper: { 
+    width: 110,
+    height: 110,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  emojiContainer: { 
+    position: 'absolute',
+    top: 30,
+    alignItems: 'center',
+  },
+  emoji: { fontSize: 44 },
+  itemName: { fontSize: 13, fontWeight: '700', color: '#f8fafc', textAlign: 'center', marginBottom: 3, lineHeight: 17 },
+  itemDays: { fontSize: 13, fontWeight: '800', color: '#94a3b8' },
+  itemBarcode: { fontSize: 9, color: '#64748b', marginTop: 4 },
   emptyState: { alignItems: 'center', paddingTop: 80 },
   emptyText: { fontSize: 22, fontWeight: '600', color: '#64748b' },
   emptySubtext: { fontSize: 16, color: '#475569', marginTop: 8 },
