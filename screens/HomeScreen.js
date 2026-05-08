@@ -138,7 +138,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Omnidirectional Hex Grid */}
+      {/* Omnidirectional Hex Grid - Bigger Tiles */}
       <ScrollView 
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
@@ -149,18 +149,18 @@ export default function HomeScreen({ navigation }) {
           return (
             <View key={item.id} style={styles.itemCard}>
               <View style={styles.hexWrapper}>
-                <Svg width={130} height={130} viewBox="0 0 100 100">
+                <Svg width={150} height={150} viewBox="0 0 100 100">
                   <Defs>
                     <LinearGradient id={`leftGradient${index}`} x1="0%" y1="0%" x2="100%" y2="0%">
                       <Stop offset="0%" stopColor={urgency} stopOpacity="1" />
-                      <Stop offset="45%" stopColor="#1e293b" stopOpacity="1" />
+                      <Stop offset="50%" stopColor="#1e293b" stopOpacity="1" />
                     </LinearGradient>
                   </Defs>
                   <Polygon
                     points={hexPoints}
                     fill={`url(#leftGradient${index})`}
                     stroke="#334155"
-                    strokeWidth="4"
+                    strokeWidth="5"
                   />
                 </Svg>
                 <View style={styles.contentOverlay}>
@@ -216,28 +216,28 @@ const styles = StyleSheet.create({
   gridContainer: { 
     flexDirection: 'row', 
     flexWrap: 'wrap', 
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 6,
     paddingBottom: 40,
+    gap: 8,
   },
   itemCard: { 
-    width: (SCREEN_WIDTH - 32) / 2,
+    width: 155,
     alignItems: 'center',
-    marginBottom: 8,
   },
   hexWrapper: { 
-    width: 130,
-    height: 130,
+    width: 150,
+    height: 150,
     alignItems: 'center',
     justifyContent: 'center',
   },
   contentOverlay: { 
     position: 'absolute',
-    top: 18,
+    top: 22,
     alignItems: 'center',
-    width: 100,
+    width: 110,
   },
-  emoji: { fontSize: 40, marginBottom: 2 },
+  emoji: { fontSize: 42, marginBottom: 2 },
   itemName: { fontSize: 11, fontWeight: '700', color: '#f8fafc', textAlign: 'center', lineHeight: 13, paddingHorizontal: 2 },
   itemDays: { fontSize: 10, fontWeight: '800', color: '#94a3b8' },
   itemExpiry: { fontSize: 9, color: '#64748b', marginTop: 1 },
