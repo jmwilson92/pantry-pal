@@ -82,7 +82,7 @@ export default function ScanScreen({ navigation }) {
               saveItem({ name: productName, barcode: data, expiry: 'NA' });
               triggerCelebration('Food added! ✅');
               setTimeout(() => {
-                setScanned(false); // Stay on scanner for next item
+                setScanned(false);
               }, 1500);
             }
           },
@@ -110,7 +110,7 @@ export default function ScanScreen({ navigation }) {
       setShowDateModal(false);
       triggerCelebration('Food added! ✅');
       setTimeout(() => {
-        setScanned(false); // Stay on scanner for next item
+        setScanned(false);
         setPendingItem(null);
       }, 1500);
     }
@@ -179,7 +179,7 @@ export default function ScanScreen({ navigation }) {
         setShowCelebration(false);
         celebrationAnim.setValue(0);
       });
-    }, 1600);
+    }, 3000); // Now 3 seconds
   };
 
   if (!permission) return <Text style={styles.center}>Requesting camera...</Text>;
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   },
   celebrationBanner: {
     position: 'absolute',
-    top: 60,
+    top: 20, // Very top
     backgroundColor: '#00ff9f',
     paddingHorizontal: 32,
     paddingVertical: 16,
