@@ -9,6 +9,7 @@ import {
   Alert 
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { saveItem } from '../utils/firestoreStorage';
 import { useAuth } from '../context/AuthContext';
 
@@ -19,24 +20,22 @@ export default function AddItemScreen({ navigation, route }) {
   const [location, setLocation] = useState('Pantry');
   const [quantity, setQuantity] = useState(1);
   const [expiryDate, setExpiryDate] = useState(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [photoUri, setPhotoUri] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
     if (!permissionResult.granted) {
       Alert.alert('Permission required', 'We need access to your photos');
       return;
     }
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
     });
-
     if (!result.canceled) {
       setPhotoUri(result.assets[0].uri);
     }
@@ -44,18 +43,15 @@ export default function AddItemScreen({ navigation, route }) {
 
   const takePhoto = async () => {
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    
     if (!permissionResult.granted) {
       Alert.alert('Permission required', 'We need camera access');
       return;
     }
-
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
     });
-
     if (!result.canceled) {
       setPhotoUri(result.assets[0].uri);
     }
@@ -66,9 +62,7 @@ export default function AddItemScreen({ navigation, route }) {
       Alert.alert('Error', 'Please enter an item name');
       return;
     }
-
     setLoading(true);
-
     const item = {
       name: name.trim(),
       barcode: barcode || null,
@@ -76,10 +70,9 @@ export default function AddItemScreen({ navigation, route }) {
       quantity,
       expiry: expiryDate ? expiryDate.toISOString().split('T')[0] : null,
       hasExpiry: !!expiryDate,
-      photoUri: photoUri || null, // We'll upload to Firebase Storage later
+      photoUri: photoUri || null,
       userId: currentUser.uid,
     };
-
     await saveItem(item);
     setLoading(false);
     navigation.goBack();
@@ -108,6 +101,24 @@ export default function AddItemScreen({ navigation, route }) {
           <Text style={styles.photoButtonText}>🖼️ Choose Photo</Text>
         </TouchableOpacity>
       </View>
+
+      <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
+        <Text style={styles.dateButtonText}>
+          {expiryDate ? `Expires: ${expiryDate.toDateString()}` : 'Set Expiration Date (optional)'}
+        </Text>
+      </TouchableOpacity>
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={expiryDate || new Date()}
+          mode="date"
+          display="default"
+          onChange={(event, selectedDate) => {
+            setShowDatePicker(false);
+            if (selectedDate) setExpiryDate(selectedDate);
+          }}
+        />
+      )}
 
       <TouchableOpacity 
         style={styles.saveButton} 
@@ -146,7 +157,7 @@ const styles = StyleSheet.create({
   },
   photoPreview: {
     width: '100%',
-    height: 200,
+    height: 180,
     borderRadius: 12,
     marginBottom: 16,
     resizeMode: 'cover',
@@ -154,7 +165,7 @@ const styles = StyleSheet.create({
   photoButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   photoButton: {
     flex: 1,
@@ -167,6 +178,19 @@ const styles = StyleSheet.create({
   photoButtonText: {
     color: '#3f2a1d',
     fontWeight: '600',
+  },
+  dateButton: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#e8d9c2',
+  },
+  dateButtonText: {
+    color: '#3f2a1d',
+    fontSize: 16,
+    textAlign: 'center',
   },
   saveButton: {
     backgroundColor: '#22c55e',
