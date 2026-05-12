@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import SplashScreen from './screens/SplashScreen';
 import HomeScreen from './screens/HomeScreen';
 import ScanScreen from './screens/ScanScreen';
 import InventoryScreen from './screens/InventoryScreen';
@@ -9,6 +10,16 @@ import InventoryScreen from './screens/InventoryScreen';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const [isSplashVisible, setIsSplashVisible] = useState(true);
+
+  const handleSplashFinish = () => {
+    setIsSplashVisible(false);
+  };
+
+  if (isSplashVisible) {
+    return <SplashScreen onFinish={handleSplashFinish} />;
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <NavigationContainer>
