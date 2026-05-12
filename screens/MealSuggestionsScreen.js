@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getGrokMealSuggestions, getCookingInstructions } from '../utils/grokService';
 
@@ -41,7 +41,6 @@ export default function MealSuggestionsScreen() {
   const scaledIngredients = (ingredients) => {
     if (!ingredients || !Array.isArray(ingredients)) return [];
     return ingredients.map(ing => {
-      // Simple scaling - for demo, just multiply numbers if present
       const match = ing.match(/(\d+\.?\d*)\s*(.*)/);
       if (match) {
         const num = parseFloat(match[1]) * servingsMultiplier;
@@ -73,7 +72,6 @@ export default function MealSuggestionsScreen() {
         <ScrollView style={styles.scrollView}>
           {meals.map((meal, index) => (
             <View key={index} style={styles.mealCard}>
-              <Image source={{ uri: meal.image }} style={styles.mealImage} />
               <View style={styles.mealInfo}>
                 <Text style={styles.mealName}>{meal.name}</Text>
                 <Text style={styles.mealDescription}>{meal.description}</Text>
@@ -155,9 +153,8 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: 12, fontSize: 16, color: '#7f6e5d' },
   scrollView: { flex: 1, paddingHorizontal: 16 },
-  mealCard: { backgroundColor: '#fff', borderRadius: 16, marginBottom: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
-  mealImage: { width: '100%', height: 180 },
-  mealInfo: { padding: 16 },
+  mealCard: { backgroundColor: '#fff', borderRadius: 16, marginBottom: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+  mealInfo: {  },
   mealName: { fontSize: 18, fontWeight: '700', color: '#3f2a1d', marginBottom: 8 },
   mealDescription: { fontSize: 14, color: '#7f6e5d', lineHeight: 20, marginBottom: 12 },
   ingredientsContainer: { marginBottom: 12 },
