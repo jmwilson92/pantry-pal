@@ -126,6 +126,7 @@ export default function HomeScreen({ navigation }) {
 
   const renderItem = (item) => {
     const urgency = getUrgencyColor(item);
+    const displayImage = item.photoUri || getPlaceholderImage();
 
     return (
       <Swipeable
@@ -138,7 +139,7 @@ export default function HomeScreen({ navigation }) {
         <View style={[styles.itemCard, { shadowColor: urgency }]}>
           <View style={styles.roundedWrapper}>
             <Image 
-              source={{ uri: getPlaceholderImage() }} 
+              source={{ uri: displayImage }} 
               style={styles.foodImage} 
             />
             <View style={styles.infoOverlay}>
