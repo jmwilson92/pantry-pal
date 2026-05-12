@@ -168,7 +168,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.headerRight}>
           <TouchableOpacity 
             style={styles.proButton}
-            onPress={() => navigation.navigate('MealSuggestions')}
+            onPress={() => navigation.navigate('ProDashboard')}
           >
             <Text style={styles.proText}>Pro</Text>
           </TouchableOpacity>
@@ -183,8 +183,7 @@ export default function HomeScreen({ navigation }) {
             onPress={() => navigation.navigate('Scan')}
           >
             <Text style={styles.scanButtonText}>🔍</Text>
-          </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <Text style={styles.stats}>You have {items.length} items • {filteredItems.length} shown</Text>
