@@ -5,201 +5,223 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Modal,
+  ActivityIndicator,
   Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../context/AuthContext';
 import { getGrokWeeklyPlan } from '../utils/grokService';
+import { useAuth } from '../context/AuthContext';
 import { addToGroceryList } from '../utils/groceryStorage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function WeeklyMealPlannerScreen() {
-  const [plan, setPlan] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [weeklyPlan, setWeeklyPlan] = useState([]);
   const [lockedDays, setLockedDays] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [error, setError] = useState(null);
   const navigation = useNavigation();
   const { user } = useAuth();
 
-  // Load plan only once when screen opens (no auto-regenerate)
   useEffect(() => {
+    const loadPlan = async () => {
+      try {
+        const plan = await getGrokWeeklyPlan();
+        if (plan && plan.length > 0) {
+          setWeeklyPlan(plan);
+        } else {
+          setError("Failed to load meal plan");
+        }
+      } catch (err) {
+        console.error("Load plan error:", err);
+        setError("Failed to load meal plan");
+      }
+      setIsLoading(false);
+    };
     loadPlan();
   }, []);
 
-  const loadPlan = async () => {
-    setLoading(true);
-    try {
-      const savedPlan = await AsyncStorage.getItem('weeklyPlan');
-      if (savedPlan) {
-        setPlan(JSON.parse(savedPlan));
-      } else {
-        const newPlan = await getGrokWeeklyPlan();
-        if (Array.isArray(newPlan) && newPlan.length > 0) {
-          setPlan(newPlan);
-          await AsyncStorage.setItem('weeklyPlan', JSON.stringify(newPlan));
-        }
-      }
-    } catch (error) {
-      console.error('Error loading plan:', error);
-      Alert.alert('Error', 'Could not load meal plan');
+  const toggleLock = (day) => {
+    if (lockedDays.includes(day)) {
+      setLockedDays(lockedDays.filter(d => d !== day));
+    } else {
+      setLockedDays([...lockedDays, day]);
     }
-    setLoading(false);
   };
 
-  const regeneratePlan = async () => {
-    setLoading(true);
+  const handleRegenerate = async () => {
+    setIsRegenerating(true);
+    setError(null);
+
     try {
       const newPlan = await getGrokWeeklyPlan();
-      
-      if (!Array.isArray(newPlan) || newPlan.length === 0) {
-        Alert.alert('Error', 'Failed to generate new plan. Please try again.');
-        setLoading(false);
+
+      if (!newPlan || newPlan.length === 0) {
+        setError("Grok didn't return a valid plan");
+        setIsRegenerating(false);
         return;
       }
 
-      // Keep locked days, replace unlocked ones
-      const updatedPlan = plan.map((dayPlan, index) => {
-        if (lockedDays.includes(index)) {
-          return dayPlan; // Keep locked
+      const updatedPlan = weeklyPlan.map((existingDay, index) => {
+        const isLocked = lockedDays.includes(existingDay.day);
+        if (isLocked) {
+          return existingDay;
         } else {
-          return newPlan[index] || dayPlan; // Replace unlocked
+          return newPlan[index] || existingDay;
         }
       });
-      
-      setPlan(updatedPlan);
-      await AsyncStorage.setItem('weeklyPlan', JSON.stringify(updatedPlan));
-      console.log('Regenerated plan with', updatedPlan.length, 'days, locked:', lockedDays.length);
-    } catch (error) {
-      console.error('Error regenerating plan:', error);
-      Alert.alert('Error', 'Could not regenerate plan');
+
+      setWeeklyPlan(updatedPlan);
+      console.log("Regenerated plan with", updatedPlan.length, "days, locked:", lockedDays.length);
+    } catch (err) {
+      console.error("Regenerate error:", err);
+      setError("Failed to regenerate plan");
     }
-    setLoading(false);
+
+    setIsRegenerating(false);
   };
 
-  const toggleLock = (index) => {
-    if (lockedDays.includes(index)) {
-      setLockedDays(lockedDays.filter(i => i !== index));
-    } else {
-      setLockedDays([...lockedDays, index]);
-    }
-  };
-
-  const transferToGroceryList = async () => {
+  const handleTransferToGroceryList = async () => {
     if (lockedDays.length !== 7) {
-      Alert.alert('Lock all days first', 'Please lock all 7 days before transferring to grocery list');
+      Alert.alert("Lock all days first", "You need to lock all 7 days before transferring to grocery list");
       return;
     }
 
-    const allIngredients = [];
-    plan.forEach(day => {
-      ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
-        const meal = day[mealType];
-        if (meal && meal.ingredients) {
-          meal.ingredients.forEach(ing => {
-            allIngredients.push({
-              name: ing,
-              quantity: '1',
-              unit: 'serving',
-              fromMeal: `${day.day} - ${mealType}`
+    try {
+      const allIngredients = [];
+      weeklyPlan.forEach(day => {
+        ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+          const meal = day[mealType];
+          if (meal && meal.ingredients) {
+            meal.ingredients.forEach(ing => {
+              allIngredients.push({
+                name: ing,
+                quantity: "1",
+                unit: "",
+                source: `${day.day} - ${mealType}`
+              });
             });
-          });
-        }
+          }
+        });
       });
-    });
 
-    await addToGroceryList(allIngredients);
-    Alert.alert('Success!', 'All ingredients transferred to your Smart Grocery List!');
-    navigation.navigate('GroceryList');
+      await addToGroceryList(allIngredients);
+      Alert.alert("Success", "All ingredients added to your Smart Grocery List!");
+      navigation.navigate('GroceryList');
+    } catch (err) {
+      console.error("Transfer error:", err);
+      Alert.alert("Error", "Failed to transfer to grocery list");
+    }
   };
 
-  const allLocked = lockedDays.length === 7;
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#e67e22" />
+        <Text style={styles.loadingText}>Loading your weekly plan...</Text>
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Weekly Meal Planner</Text>
-        <TouchableOpacity onPress={regeneratePlan} style={styles.regenerateButton}>
-          <Text style={styles.regenerateText}>🔄 Regenerate</Text>
+        <TouchableOpacity 
+          style={styles.regenerateButton} 
+          onPress={handleRegenerate}
+          disabled={isRegenerating}
+        >
+          <Text style={styles.regenerateText}>
+            {isRegenerating ? "Regenerating..." : "🔄 Regenerate Plan"}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView}>
-        {plan.length > 0 ? (
-          plan.map((dayPlan, index) => (
+      {error && <Text style={styles.errorText}>{error}</Text>}
+
+      {weeklyPlan.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No meal plan loaded</Text>
+          <TouchableOpacity style={styles.button} onPress={handleRegenerate}>
+            <Text style={styles.buttonText}>Generate Weekly Plan</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        weeklyPlan.map((dayPlan, index) => {
+          const isLocked = lockedDays.includes(dayPlan.day);
+          return (
             <View key={index} style={styles.dayCard}>
               <View style={styles.dayHeader}>
                 <Text style={styles.dayTitle}>{dayPlan.day}</Text>
                 <TouchableOpacity 
-                  onPress={() => toggleLock(index)}
-                  style={[styles.lockButton, lockedDays.includes(index) && styles.lockedButton]}
+                  style={[styles.lockButton, isLocked && styles.lockedButton]} 
+                  onPress={() => toggleLock(dayPlan.day)}
                 >
                   <Text style={styles.lockText}>
-                    {lockedDays.includes(index) ? '🔒 Locked' : '🔓 Lock'}
+                    {isLocked ? "🔒 Locked" : "🔓 Lock"}
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              {['breakfast', 'lunch', 'dinner'].map(mealType => (
-                <View key={mealType} style={styles.mealRow}>
-                  <Text style={styles.mealType}>{mealType.charAt(0).toUpperCase() + mealType.slice(1)}</Text>
-                  <Text style={styles.mealName}>{dayPlan[mealType]?.name}</Text>
-                  <Text style={styles.mealDesc}>{dayPlan[mealType]?.description}</Text>
-                  {dayPlan[mealType]?.key_nutrients && (
-                    <Text style={styles.nutrients}>
-                      Key nutrients: {Array.isArray(dayPlan[mealType].key_nutrients) ? dayPlan[mealType].key_nutrients.join(', ') : dayPlan[mealType].key_nutrients}
-                    </Text>
-                  )}
-                </View>
-              ))}
+              {['breakfast', 'lunch', 'dinner'].map(mealType => {
+                const meal = dayPlan[mealType];
+                if (!meal) return null;
+                return (
+                  <View key={mealType} style={styles.mealSection}>
+                    <Text style={styles.mealType}>{mealType.toUpperCase()}</Text>
+                    <Text style={styles.mealName}>{meal.name}</Text>
+                    <Text style={styles.mealDescription}>{meal.description}</Text>
+                    {meal.key_nutrients && (
+                      <Text style={styles.nutrients}>
+                        Key nutrients: {meal.key_nutrients.join(', ')}
+                      </Text>
+                    )}
+                  </View>
+                );
+              })}
             </View>
-          ))
-        ) : (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No meal plan yet. Tap Regenerate to start.</Text>
-          </View>
-        )}
-      </ScrollView>
+          );
+        })
+      )}
 
-      {allLocked && (
+      {lockedDays.length === 7 && (
         <TouchableOpacity 
-          style={styles.transferButton}
-          onPress={transferToGroceryList}
+          style={styles.transferButton} 
+          onPress={handleTransferToGroceryList}
         >
           <Text style={styles.transferText}>🛒 Transfer to Grocery List</Text>
         </TouchableOpacity>
       )}
 
-      {loading && (
-        <View style={styles.loadingOverlay}>
-          <Text style={styles.loadingText}>Pantry Pro is planning your week...</Text>
-        </View>
-      )}
-    </View>
+      <View style={{ height: 100 }} />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f1e9' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
+  container: { flex: 1, backgroundColor: '#f8f1e9', padding: 16 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   title: { fontSize: 24, fontWeight: 'bold', color: '#3f2a1d' },
   regenerateButton: { backgroundColor: '#e67e22', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
   regenerateText: { color: '#fff', fontWeight: '600' },
-  scrollView: { flex: 1, paddingHorizontal: 16 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 12, color: '#7f6e5d' },
+  errorText: { color: '#e74c3c', textAlign: 'center', marginBottom: 16 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
+  emptyText: { fontSize: 18, color: '#7f6e5d', marginBottom: 20 },
   dayCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
   dayHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  dayTitle: { fontSize: 20, fontWeight: 'bold', color: '#3f2a1d' },
-  lockButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: '#f0f0f0' },
+  dayTitle: { fontSize: 18, fontWeight: 'bold', color: '#3f2a1d' },
+  lockButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: '#ecf0f1' },
   lockedButton: { backgroundColor: '#27ae60' },
-  lockText: { fontSize: 12, fontWeight: '600', color: '#fff' },
-  mealRow: { marginBottom: 12 },
-  mealType: { fontSize: 14, fontWeight: '600', color: '#e67e22', marginBottom: 2 },
-  mealName: { fontSize: 16, fontWeight: '600', color: '#3f2a1d' },
-  mealDesc: { fontSize: 14, color: '#666', marginTop: 4 },
-  nutrients: { fontSize: 12, color: '#27ae60', marginTop: 4, fontStyle: 'italic' },
-  transferButton: { backgroundColor: '#27ae60', margin: 16, padding: 16, borderRadius: 12, alignItems: 'center' },
-  transferText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  loadingOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  loadingText: { color: '#fff', fontSize: 18, fontWeight: '600' },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
-  emptyText: { fontSize: 18, color: '#7f6e5d', textAlign: 'center' },
+  lockText: { fontSize: 12, fontWeight: '600', color: '#2c3e50' },
+  mealSection: { marginBottom: 12, paddingLeft: 8, borderLeftWidth: 3, borderLeftColor: '#e67e22' },
+  mealType: { fontSize: 11, fontWeight: '600', color: '#e67e22', marginBottom: 4 },
+  mealName: { fontSize: 16, fontWeight: '600', color: '#3f2a1d', marginBottom: 4 },
+  mealDescription: { fontSize: 14, color: '#7f6e5d', marginBottom: 4 },
+  nutrients: { fontSize: 12, color: '#27ae60', fontStyle: 'italic' },
+  transferButton: { backgroundColor: '#27ae60', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 20 },
+  transferText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  button: { backgroundColor: '#e67e22', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
+  buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
 });
