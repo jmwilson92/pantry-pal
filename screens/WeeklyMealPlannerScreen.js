@@ -1,114 +1,96 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal } from 'react-native';
-import { loadItems } from '../utils/firestoreStorage';
-import { getGrokResponse } from '../utils/grokService';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, ActivityIndicator } from 'react-native';
+import { getGrokWeeklyPlan } from '../utils/grokService';
 
-export default function WeeklyMealPlannerScreen({ navigation }) {
+export default function WeeklyMealPlannerScreen() {
   const [plan, setPlan] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedMeal, setSelectedMeal] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
-  useEffect(() => {
-    loadPlan();
-  }, []);
-
-  const loadPlan = async () => {
+  const generatePlan = async () => {
     setLoading(true);
-    const items = await loadItems();
-    const itemNames = items.map(i => i.name);
-
-    const prompt = `Create a realistic 7-day meal plan using these pantry items: ${itemNames.join(', ')}. Return as JSON array with keys: day, breakfast, lunch, dinner, emoji. Make it practical and fun.`;
-
     try {
-      const response = await getGrokResponse(prompt, items);
-      let parsed;
-      try {
-        parsed = JSON.parse(response.replace(/```json|```/g, '').trim());
-      } catch (e) {
-        parsed = Array.from({length: 7}, (_, i) => ({
-          day: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][i],
-          breakfast: 'Avocado Toast',
-          lunch: 'Chicken Salad',
-          dinner: 'Pasta Primavera',
-          emoji: '🥑'
-        }));
-      }
-      setPlan(parsed);
+      const weeklyPlan = await getGrokWeeklyPlan();
+      setPlan(weeklyPlan);
     } catch (error) {
-      console.error('Grok error:', error);
-      setPlan(Array.from({length: 7}, (_, i) => ({
-        day: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][i],
-        breakfast: 'Avocado Toast',
-        lunch: 'Chicken Salad',
-        dinner: 'Pasta Primavera',
-        emoji: '🥑'
-      })));
+      console.error('Error generating weekly plan:', error);
+      setPlan(getMockWeeklyPlan());
     }
     setLoading(false);
   };
 
-  const showMealDetails = (mealName, type, day) => {
-    setSelectedMeal({ name: mealName, type, day });
+  const openDayModal = (day) => {
+    setSelectedDay(day);
+    setShowModal(true);
   };
+
+  useEffect(() => {
+    generatePlan();
+  }, []);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Weekly Meal Planner</Text>
-      <Text style={styles.subtitle}>7-day plan tailored to your pantry</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Weekly Meal Planner</Text>
+        <TouchableOpacity onPress={generatePlan} style={styles.regenerateButton}>
+          <Text style={styles.regenerateText}>Regenerate</Text>
+        </TouchableOpacity>
+      </View>
 
       {loading ? (
-        <Text style={styles.loading}>Pantry Pro is planning your week...</Text>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#e67e22" />
+          <Text style={styles.loadingText}>Pantry Pro is creating your weekly plan...</Text>
+        </View>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {plan.map((dayPlan, index) => (
-            <View key={index} style={styles.dayCard}>
-              <View style={styles.dayHeader}>
-                <Text style={styles.emoji}>{dayPlan.emoji}</Text>
-                <Text style={styles.dayName}>{dayPlan.day}</Text>
-              </View>
-              <TouchableOpacity onPress={() => showMealDetails(dayPlan.breakfast, 'Breakfast', dayPlan.day)}>
-                <View style={styles.mealRow}>
-                  <Text style={styles.mealLabel}>Breakfast</Text>
-                  <Text style={styles.mealName}>{dayPlan.breakfast}</Text>
-                </View>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => showMealDetails(dayPlan.lunch, 'Lunch', dayPlan.day)}>
-                <View style={styles.mealRow}>
-                  <Text style={styles.mealLabel}>Lunch</Text>
-                  <Text style={styles.mealName}>{dayPlan.lunch}</Text>
-                </View>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => showMealDetails(dayPlan.dinner, 'Dinner', dayPlan.day)}>
-                <View style={styles.mealRow}>
-                  <Text style={styles.mealLabel}>Dinner</Text>
-                  <Text style={styles.mealName}>{dayPlan.dinner}</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
+        <ScrollView style={styles.scrollView}>
+          {plan.map((day, index) => (
+            <TouchableOpacity 
+              key={index} 
+              style={styles.dayCard}
+              onPress={() => openDayModal(day)}
+            >
+              <Text style={styles.dayTitle}>{day.day}</Text>
+              <Text style={styles.daySummary}>
+                {day.breakfast?.name} • {day.lunch?.name} • {day.dinner?.name}
+              </Text>
+            </TouchableOpacity>
           ))}
         </ScrollView>
       )}
 
-      <TouchableOpacity style={styles.regenerateButton} onPress={loadPlan}>
-        <Text style={styles.regenerateText}>Regenerate Plan 🔄</Text>
-      </TouchableOpacity>
-
-      <Modal visible={!!selectedMeal} transparent animationType="slide" onRequestClose={() => setSelectedMeal(null)}>
+      <Modal visible={showModal} animationType="slide" transparent={true}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{selectedMeal?.name}</Text>
-            <Text style={styles.modalType}>{selectedMeal?.type} • {selectedMeal?.day}</Text>
-            <Text style={styles.modalSection}>Ingredients (from your pantry + a few extras):</Text>
-            <Text style={styles.modalText}>Avocado, Eggs, Bread, Olive Oil, Salt, Pepper</Text>
-            <Text style={styles.modalSection}>Key Nutrients:</Text>
-            <Text style={styles.modalText}>• Protein: 12g
-• Healthy Fats: 15g
-• Fiber: 8g
-• Vitamin C: 25% DV</Text>
-            <Text style={styles.modalSection}>Visual:</Text>
-            <Text style={styles.modalEmoji}>🥑🥑🥑</Text>
-            <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedMeal(null)}>
-              <Text style={styles.closeText}>Close</Text>
+            <Text style={styles.modalTitle}>{selectedDay?.day}</Text>
+            
+            <View style={styles.mealSection}>
+              <Text style={styles.mealType}>Breakfast</Text>
+              <Text style={styles.mealName}>{selectedDay?.breakfast?.name}</Text>
+              <Text style={styles.mealDesc}>{selectedDay?.breakfast?.description}</Text>
+              <Text style={styles.nutrients}>Key nutrients: {selectedDay?.breakfast?.nutrients}</Text>
+            </View>
+
+            <View style={styles.mealSection}>
+              <Text style={styles.mealType}>Lunch</Text>
+              <Text style={styles.mealName}>{selectedDay?.lunch?.name}</Text>
+              <Text style={styles.mealDesc}>{selectedDay?.lunch?.description}</Text>
+              <Text style={styles.nutrients}>Key nutrients: {selectedDay?.lunch?.nutrients}</Text>
+            </View>
+
+            <View style={styles.mealSection}>
+              <Text style={styles.mealType}>Dinner</Text>
+              <Text style={styles.mealName}>{selectedDay?.dinner?.name}</Text>
+              <Text style={styles.mealDesc}>{selectedDay?.dinner?.description}</Text>
+              <Text style={styles.nutrients}>Key nutrients: {selectedDay?.dinner?.nutrients}</Text>
+            </View>
+
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setShowModal(false)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -118,26 +100,25 @@ export default function WeeklyMealPlannerScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f1e9', padding: 20 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#3f2a1d', marginBottom: 4 },
-  subtitle: { fontSize: 15, color: '#6b5b4f', marginBottom: 20 },
-  loading: { fontSize: 16, color: '#6b5b4f', textAlign: 'center', marginTop: 40 },
-  dayCard: { backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 14, borderWidth: 1, borderColor: '#e8d9c2' },
-  dayHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  emoji: { fontSize: 28, marginRight: 12 },
-  dayName: { fontSize: 20, fontWeight: '700', color: '#3f2a1d' },
-  mealRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, paddingVertical: 4 },
-  mealLabel: { fontSize: 14, color: '#6b5b4f', fontWeight: '600' },
-  mealName: { fontSize: 15, color: '#3f2a1d', fontWeight: '600' },
-  regenerateButton: { backgroundColor: '#e67e22', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
-  regenerateText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  modalContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalContent: { backgroundColor: '#fff', padding: 24, borderRadius: 20, width: '90%' },
-  modalTitle: { fontSize: 24, fontWeight: 'bold', color: '#3f2a1d', marginBottom: 8 },
-  modalType: { fontSize: 16, color: '#e67e22', marginBottom: 20 },
-  modalSection: { fontSize: 14, fontWeight: '600', color: '#3f2a1d', marginTop: 12 },
-  modalText: { fontSize: 14, color: '#6b5b4f', marginTop: 4 },
-  modalEmoji: { fontSize: 40, textAlign: 'center', marginVertical: 12 },
-  closeButton: { backgroundColor: '#3f2a1d', padding: 14, borderRadius: 12, alignItems: 'center', marginTop: 20 },
-  closeText: { color: '#fff', fontWeight: '700' },
+  container: { flex: 1, backgroundColor: '#f8f1e9' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#3f2a1d' },
+  regenerateButton: { backgroundColor: '#e67e22', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+  regenerateText: { color: '#fff', fontWeight: '600' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 12, fontSize: 16, color: '#7f6e5d' },
+  scrollView: { flex: 1, paddingHorizontal: 16 },
+  dayCard: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+  dayTitle: { fontSize: 20, fontWeight: '700', color: '#3f2a1d', marginBottom: 8 },
+  daySummary: { fontSize: 14, color: '#7f6e5d' },
+  modalContainer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { backgroundColor: '#fff', borderRadius: 16, width: '90%', maxHeight: '85%', padding: 20 },
+  modalTitle: { fontSize: 22, fontWeight: '700', color: '#3f2a1d', marginBottom: 16, textAlign: 'center' },
+  mealSection: { marginBottom: 20, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  mealType: { fontSize: 14, fontWeight: '600', color: '#e67e22', marginBottom: 4 },
+  mealName: { fontSize: 17, fontWeight: '700', color: '#3f2a1d', marginBottom: 6 },
+  mealDesc: { fontSize: 14, color: '#7f6e5d', lineHeight: 20, marginBottom: 6 },
+  nutrients: { fontSize: 13, color: '#27ae60', fontStyle: 'italic' },
+  closeButton: { backgroundColor: '#e67e22', paddingVertical: 14, borderRadius: 8, alignItems: 'center', marginTop: 10 },
+  closeButtonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
 });

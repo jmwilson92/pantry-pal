@@ -1,99 +1,120 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { loadItems } from '../utils/firestoreStorage';
-import { getGrokResponse } from '../utils/grokService';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator, Modal } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { getGrokMealSuggestions, getCookingInstructions } from '../utils/grokService';
 
-export default function MealSuggestionsScreen({ navigation }) {
-  const [suggestions, setSuggestions] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function MealSuggestionsScreen() {
+  const [meals, setMeals] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedMeal, setSelectedMeal] = useState(null);
+  const [instructions, setInstructions] = useState('');
+  const [showInstructions, setShowInstructions] = useState(false);
+  const navigation = useNavigation();
 
-  useEffect(() => {
-    loadSuggestions();
-  }, []);
-
-  const loadSuggestions = async () => {
+  const generateMeals = async () => {
     setLoading(true);
-    const items = await loadItems();
-    const itemNames = items.map(i => i.name);
-
-    const prompt = `Suggest 7 realistic, tasty meals I can make with these pantry items: ${itemNames.join(', ')}. For each meal, give: name, short description, time to make, difficulty (Easy/Medium/Hard), and list of ingredients from my pantry that are used. Return as a JSON array of objects with keys: name, description, time, difficulty, ingredients.`;
-
     try {
-      const response = await getGrokResponse(prompt, items);
-      let parsed;
-      try {
-        parsed = JSON.parse(response.replace(/```json|```/g, '').trim());
-      } catch (e) {
-        parsed = Array.from({length: 7}, (_, i) => ({
-          name: `Pantry Meal ${i+1}`,
-          description: "Delicious meal using what you have!",
-          time: "20 min",
-          difficulty: "Easy",
-          ingredients: itemNames.slice(0, 3)
-        }));
-      }
-      setSuggestions(parsed.slice(0, 7));
+      const suggestions = await getGrokMealSuggestions();
+      setMeals(suggestions);
     } catch (error) {
-      console.error('Grok error:', error);
-      setSuggestions(Array.from({length: 7}, (_, i) => ({
-        name: `Pantry Meal ${i+1}`,
-        description: "Delicious meal using what you have!",
-        time: "20 min",
-        difficulty: "Easy",
-        ingredients: itemNames.slice(0, 3)
-      })));
+      console.error('Error generating meals:', error);
+      setMeals(getMockMeals());
     }
     setLoading(false);
   };
 
+  const handleCookThis = async (meal) => {
+    setSelectedMeal(meal);
+    setInstructions('Pantry Pro is generating cooking instructions...');
+    setShowInstructions(true);
+    
+    try {
+      const instructionsText = await getCookingInstructions(meal.name, meal.ingredients || []);
+      setInstructions(instructionsText);
+    } catch (error) {
+      setInstructions('Sorry, could not generate instructions right now. Try again later.');
+    }
+  };
+
+  useEffect(() => {
+    generateMeals();
+  }, []);
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Meal Suggestions</Text>
-      <Text style={styles.subtitle}>Personalized for your pantry</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Meal Suggestions</Text>
+        <TouchableOpacity onPress={generateMeals} style={styles.regenerateButton}>
+          <Text style={styles.regenerateText}>Regenerate</Text>
+        </TouchableOpacity>
+      </View>
 
       {loading ? (
-        <Text style={styles.loading}>Pantry Pro is generating you meals...</Text>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#e67e22" />
+          <Text style={styles.loadingText}>Pantry Pro is generating you meals...</Text>
+        </View>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {suggestions.map((recipe, index) => (
-            <View key={index} style={styles.recipeCard}>
-              <Text style={styles.recipeName}>{recipe.name}</Text>
-              <Text style={styles.recipeDesc}>{recipe.description || ''}</Text>
-              <View style={styles.metaRow}>
-                <Text style={styles.meta}>⏱ {recipe.time || '20 min'}</Text>
-                <Text style={styles.meta}>🔥 {recipe.difficulty || 'Easy'}</Text>
+        <ScrollView style={styles.scrollView}>
+          {meals.map((meal, index) => (
+            <View key={index} style={styles.mealCard}>
+              <Image source={{ uri: meal.image }} style={styles.mealImage} />
+              <View style={styles.mealInfo}>
+                <Text style={styles.mealName}>{meal.name}</Text>
+                <Text style={styles.mealDescription}>{meal.description}</Text>
+                <TouchableOpacity 
+                  style={styles.cookButton}
+                  onPress={() => handleCookThis(meal)}
+                >
+                  <Text style={styles.cookButtonText}>Cook this</Text>
+                </TouchableOpacity>
               </View>
-              {recipe.ingredients && (
-                <Text style={styles.ingredients}>Uses: {recipe.ingredients.join(', ')}</Text>
-              )}
-              <TouchableOpacity style={styles.cookButton} onPress={() => Alert.alert('Coming soon!', 'Recipe details & instructions will be here!')}>
-                <Text style={styles.cookButtonText}>Cook This 🍳</Text>
-              </TouchableOpacity>
             </View>
           ))}
         </ScrollView>
       )}
 
-      <TouchableOpacity style={styles.regenerateButton} onPress={loadSuggestions}>
-        <Text style={styles.regenerateText}>Regenerate Meals 🔄</Text>
-      </TouchableOpacity>
+      <Modal visible={showInstructions} animationType="slide" transparent={true}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{selectedMeal?.name}</Text>
+            <ScrollView style={styles.instructionsScroll}>
+              <Text style={styles.instructionsText}>{instructions}</Text>
+            </ScrollView>
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setShowInstructions(false)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f1e9', padding: 20 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#3f2a1d', marginBottom: 4 },
-  subtitle: { fontSize: 15, color: '#6b5b4f', marginBottom: 20 },
-  loading: { fontSize: 16, color: '#6b5b4f', textAlign: 'center', marginTop: 40 },
-  recipeCard: { backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 14, borderWidth: 1, borderColor: '#e8d9c2' },
-  recipeName: { fontSize: 18, fontWeight: '700', color: '#3f2a1d', marginBottom: 6 },
-  recipeDesc: { fontSize: 14, color: '#6b5b4f', marginBottom: 10 },
-  metaRow: { flexDirection: 'row', gap: 16, marginBottom: 8 },
-  meta: { fontSize: 13, color: '#e67e22', fontWeight: '600' },
-  ingredients: { fontSize: 13, color: '#27ae60', marginBottom: 12 },
-  cookButton: { backgroundColor: '#3f2a1d', paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
-  cookButtonText: { color: '#fff', fontWeight: '700' },
-  regenerateButton: { backgroundColor: '#e67e22', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
-  regenerateText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  container: { flex: 1, backgroundColor: '#f8f1e9' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#3f2a1d' },
+  regenerateButton: { backgroundColor: '#e67e22', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+  regenerateText: { color: '#fff', fontWeight: '600' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 12, fontSize: 16, color: '#7f6e5d' },
+  scrollView: { flex: 1, paddingHorizontal: 16 },
+  mealCard: { backgroundColor: '#fff', borderRadius: 16, marginBottom: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+  mealImage: { width: '100%', height: 180 },
+  mealInfo: { padding: 16 },
+  mealName: { fontSize: 18, fontWeight: '700', color: '#3f2a1d', marginBottom: 8 },
+  mealDescription: { fontSize: 14, color: '#7f6e5d', lineHeight: 20, marginBottom: 12 },
+  cookButton: { backgroundColor: '#27ae60', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  cookButtonText: { color: '#fff', fontWeight: '600', fontSize: 15 },
+  modalContainer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { backgroundColor: '#fff', borderRadius: 16, width: '90%', maxHeight: '80%', padding: 20 },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: '#3f2a1d', marginBottom: 12 },
+  instructionsScroll: { maxHeight: 400 },
+  instructionsText: { fontSize: 15, lineHeight: 22, color: '#3f2a1d' },
+  closeButton: { backgroundColor: '#e67e22', paddingVertical: 12, borderRadius: 8, alignItems: 'center', marginTop: 16 },
+  closeButtonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
 });
