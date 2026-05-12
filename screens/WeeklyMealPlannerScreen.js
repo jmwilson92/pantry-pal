@@ -22,12 +22,14 @@ export default function WeeklyMealPlannerScreen() {
   const navigation = useNavigation();
   const { user } = useAuth();
 
+  // Load plan once when screen mounts
   useEffect(() => {
     const loadPlan = async () => {
       try {
         const plan = await getGrokWeeklyPlan();
         if (plan && plan.length > 0) {
           setWeeklyPlan(plan);
+          console.log("Loaded plan with", plan.length, "days");
         } else {
           setError("Failed to load meal plan");
         }
@@ -187,7 +189,7 @@ export default function WeeklyMealPlannerScreen() {
           style={styles.transferButton} 
           onPress={handleTransferToGroceryList}
         >
-          <Text style={styles.transferText}>🛍️ Transfer to Grocery List</Text>
+          <Text style={styles.transferText}>🛒 Transfer to Grocery List</Text>
         </TouchableOpacity>
       )}
 
