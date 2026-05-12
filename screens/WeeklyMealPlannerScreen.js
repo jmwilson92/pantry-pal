@@ -12,6 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import { getGrokWeeklyPlan } from '../utils/grokService';
 import { useAuth } from '../context/AuthContext';
 import { addToGroceryList } from '../utils/groceryStorage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function WeeklyMealPlannerScreen() {
   const [weeklyPlan, setWeeklyPlan] = useState([]);
@@ -22,16 +23,26 @@ export default function WeeklyMealPlannerScreen() {
   const navigation = useNavigation();
   const { user } = useAuth();
 
-  // Load plan once when screen mounts
+  // Load plan from storage or generate new one
   useEffect(() => {
     const loadPlan = async () => {
       try {
-        const plan = await getGrokWeeklyPlan();
-        if (plan && plan.length > 0) {
-          setWeeklyPlan(plan);
-          console.log("Loaded plan with", plan.length, "days");
+        // Try to load from AsyncStorage first
+        const savedPlan = await AsyncStorage.getItem('weeklyMealPlan');
+        if (savedPlan) {
+          const parsedPlan = JSON.parse(savedPlan);
+          setWeeklyPlan(parsedPlan);
+          console.log("Loaded saved plan with", parsedPlan.length, "days");
         } else {
-          setError("Failed to load meal plan");
+          // Generate new plan if none saved
+          const plan = await getGrokWeeklyPlan();
+          if (plan && plan.length > 0) {
+            setWeeklyPlan(plan);
+            await AsyncStorage.setItem('weeklyMealPlan', JSON.stringify(plan));
+            console.log("Generated and saved new plan with", plan.length, "days");
+          } else {
+            setError("Failed to load meal plan");
+          }
         }
       } catch (err) {
         console.error("Load plan error:", err);
@@ -63,6 +74,7 @@ export default function WeeklyMealPlannerScreen() {
         return;
       }
 
+      // Keep locked days, replace unlocked ones
       const updatedPlan = weeklyPlan.map((existingDay, index) => {
         const isLocked = lockedDays.includes(existingDay.day);
         if (isLocked) {
@@ -73,6 +85,7 @@ export default function WeeklyMealPlannerScreen() {
       });
 
       setWeeklyPlan(updatedPlan);
+      await AsyncStorage.setItem('weeklyMealPlan', JSON.stringify(updatedPlan));
       console.log("Regenerated plan with", updatedPlan.length, "days, locked:", lockedDays.length);
     } catch (err) {
       console.error("Regenerate error:", err);
