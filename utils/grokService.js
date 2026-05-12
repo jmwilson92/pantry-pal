@@ -3,7 +3,20 @@ const GROK_API_KEY = 'YOUR_XAI_API_KEY_HERE';
 const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
 
 export async function getGrokMealSuggestions() {
-  const prompt = `You are a creative chef. Generate 7 unique, delicious meal ideas with real appetizing names. For each meal provide:
+  const loadingTexts = [
+    'Pantry Pro is generating meals...',
+    'Dicing onions...',
+    'Shredding cheese...',
+    'Preheating oven...',
+    'Chopping fresh herbs...',
+    'Searing the steak...',
+    'Simmering the sauce...',
+    'Tossing the salad...',
+    'Marinating the chicken...',
+    'Roasting the vegetables...'
+  ];
+
+  const prompt = `You are a creative chef. Generate 7 unique, delicious meal ideas with real appetizing names (not generic like 'Meal 1'). For each meal provide:
 - Creative name
 - Short tasty description (2-3 sentences)
 - 4-6 main ingredients as array
@@ -22,7 +35,7 @@ Format as JSON array. Be creative and varied even if pantry is empty.`;
         model: "grok-3-latest",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.9,
-        max_tokens: 1200,
+        max_tokens: 1500,
       }),
     });
 
@@ -47,6 +60,19 @@ Format as JSON array. Be creative and varied even if pantry is empty.`;
 }
 
 export async function getGrokWeeklyPlan() {
+  const loadingTexts = [
+    'Pantry Pro is creating your weekly plan...',
+    'Dicing onions...',
+    'Shredding cheese...',
+    'Preheating oven...',
+    'Chopping fresh herbs...',
+    'Searing the steak...',
+    'Simmering the sauce...',
+    'Tossing the salad...',
+    'Marinating the chicken...',
+    'Roasting the vegetables...'
+  ];
+
   const prompt = `You are a creative meal planner. Generate a full 7-day meal plan with breakfast, lunch, and dinner for each day. Make them creative and varied. For each meal provide name, short description, key nutrients/vitamins.
 
 Format as JSON array with days Monday to Sunday, each with breakfast, lunch, dinner objects.`;
@@ -62,7 +88,7 @@ Format as JSON array with days Monday to Sunday, each with breakfast, lunch, din
         model: "grok-3-latest",
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.85,
-        max_tokens: 1800,
+        max_tokens: 2000,
       }),
     });
 
@@ -79,6 +105,7 @@ Format as JSON array with days Monday to Sunday, each with breakfast, lunch, din
     if (Array.isArray(plan)) {
       return plan;
     } else {
+      console.error("Weekly plan is not an array:", plan);
       return getMockWeeklyPlan();
     }
   } catch (error) {
@@ -88,7 +115,7 @@ Format as JSON array with days Monday to Sunday, each with breakfast, lunch, din
 }
 
 export async function getCookingInstructions(mealName, ingredients) {
-  const prompt = `You are a helpful chef. Give clear step-by-step cooking instructions for ${mealName} using these ingredients: ${ingredients.join(', ')}. Include prep time and tips. Keep under 300 words.`;
+  const prompt = `You are a helpful chef. Give clear step-by-step cooking instructions for ${mealName} using these ingredients: ${ingredients.join(', ')}. Include prep time and tips. Keep under 300 words. Do not say "I'm assuming" or use placeholders. Start directly with the instructions. Use bullet points for tips, no dashes or asterisks.`;
 
   try {
     const response = await fetch(GROK_API_URL, {
@@ -101,7 +128,7 @@ export async function getCookingInstructions(mealName, ingredients) {
         model: "grok-3-latest",
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: 600,
       }),
     });
 
