@@ -312,12 +312,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   actionLabel: {
-    color: '#fff',
+    color: '#000',
     fontWeight: '600',
     fontSize: 12,
-    textShadowColor: 'rgba(0,0,0,0.4)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(63, 42, 29, 0.7)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: '#fff', borderRadius: 20, padding: 20, width: '85%', maxWidth: 320 },
