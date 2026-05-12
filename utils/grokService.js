@@ -19,7 +19,7 @@ Format as JSON array. Be creative and varied even if pantry is empty.`;
         'Authorization': `Bearer ${GROK_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'grok-2-latest',
+        model: 'grok-3-latest',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.9,
         max_tokens: 1500,
@@ -59,7 +59,7 @@ Format as JSON array with days Monday to Sunday, each with breakfast, lunch, din
         'Authorization': `Bearer ${GROK_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'grok-2-latest',
+        model: 'grok-3-latest',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.85,
         max_tokens: 2000,
@@ -91,7 +91,7 @@ export async function getCookingInstructions(mealName, ingredients) {
         'Authorization': `Bearer ${GROK_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'grok-2-latest',
+        model: 'grok-3-latest',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
         max_tokens: 600,
@@ -128,7 +128,7 @@ function getMockWeeklyPlan() {
     { day: 'Monday', breakfast: { name: 'Avocado Toast', description: 'Creamy avocado on toasted sourdough with chili flakes', nutrients: 'Healthy fats, Vitamin E, Fiber' }, lunch: { name: 'Quinoa Veggie Bowl', description: 'Fresh mixed veggies with quinoa and tahini dressing', nutrients: 'Complete protein, Fiber, Iron' }, dinner: { name: 'Grilled Salmon with Asparagus', description: 'Lemon herb salmon fillet with roasted asparagus', nutrients: 'Omega-3, Protein, Vitamin D' } },
     { day: 'Tuesday', breakfast: { name: 'Berry Yogurt Parfait', description: 'Greek yogurt layered with fresh berries and granola', nutrients: 'Probiotics, Antioxidants, Calcium' }, lunch: { name: 'Chickpea Salad Wrap', description: 'Spiced chickpeas in a whole wheat wrap with veggies', nutrients: 'Plant protein, Fiber, Folate' }, dinner: { name: 'Mushroom Risotto', description: 'Creamy arborio rice with wild mushrooms and parmesan', nutrients: 'B vitamins, Fiber, Antioxidants' } },
     { day: 'Wednesday', breakfast: { name: 'Scrambled Eggs with Spinach', description: 'Fluffy eggs with fresh spinach and feta cheese', nutrients: 'Protein, Iron, Vitamin A' }, lunch: { name: 'Lentil Soup with Bread', description: 'Hearty lentil soup with crusty whole grain bread', nutrients: 'Plant protein, Fiber, Iron' }, dinner: { name: 'Beef Stir Fry', description: 'Tender beef with broccoli and garlic sauce over rice', nutrients: 'Protein, Vitamin C, Iron' } },
-    { day: 'Thursday', breakfast: { name: 'Banana Oat Pancakes', description: 'Fluffy pancakes made with banana and oats', nutrients: 'Potassium, Fiber, B vitamins' }, lunch: { name: 'Caprese Salad', description: 'Fresh mozzarella, tomatoes, and basil with balsamic', nutrients: 'Calcium, Lycopene, Healthy fats' }, dinner: { name: 'Baked Cod with Sweet Potato', description: 'Oven-baked cod with roasted sweet potato wedges', nutrients: 'Lean protein, Beta-carotene, Omega-3' } },
+    { day: 'Thursday', breakfast: { name: 'Banana Oat Pancakes', description: 'Fluffy pancakes made with banana and oats', nutrients: 'Potassium, Fiber, B vitamins' }, lunch: { name: 'Caprese Salad', description: 'Fresh mozzarella, tomatoes, and basil with balsamic', nutrients: 'Calcium, Lycopome, Healthy fats' }, dinner: { name: 'Baked Cod with Sweet Potato', description: 'Oven-baked cod with roasted sweet potato wedges', nutrients: 'Lean protein, Beta-carotene, Omega-3' } },
     { day: 'Friday', breakfast: { name: 'Chia Pudding with Mango', description: 'Overnight chia pudding topped with fresh mango', nutrients: 'Omega-3, Fiber, Vitamin C' }, lunch: { name: 'Turkey Avocado Sandwich', description: 'Sliced turkey with avocado on whole grain bread', nutrients: 'Lean protein, Healthy fats, Fiber' }, dinner: { name: 'Vegetable Curry', description: 'Mixed vegetables in fragrant coconut curry sauce', nutrients: 'Fiber, Vitamins, Antioxidants' } },
     { day: 'Saturday', breakfast: { name: 'Smoked Salmon Bagel', description: 'Toasted bagel with cream cheese and smoked salmon', nutrients: 'Omega-3, Protein, Calcium' }, lunch: { name: 'Greek Salad with Chicken', description: 'Grilled chicken over crisp salad with feta and olives', nutrients: 'Protein, Healthy fats, Vitamins' }, dinner: { name: 'Pork Tenderloin with Apples', description: 'Roasted pork with caramelized apples and sage', nutrients: 'Protein, Fiber, Iron' } },
     { day: 'Sunday', breakfast: { name: 'Veggie Omelette', description: 'Fluffy omelette loaded with peppers, onions, and cheese', nutrients: 'Protein, Vitamins, Calcium' }, lunch: { name: 'Falafel Bowl', description: 'Crispy falafel with hummus, veggies, and tahini', nutrients: 'Plant protein, Fiber, Iron' }, dinner: { name: 'Shrimp Tacos', description: 'Grilled shrimp in corn tortillas with slaw and lime', nutrients: 'Lean protein, Vitamin C, Omega-3' } },
