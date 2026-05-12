@@ -10,6 +10,7 @@ import HomeScreen from './screens/HomeScreen';
 import ScanScreen from './screens/ScanScreen';
 import InventoryScreen from './screens/InventoryScreen';
 import AddItemScreen from './screens/AddItemScreen';
+import ProfileScreen from './screens/ProfileScreen';
 import { registerForPushNotifications, scheduleExpiringNotifications } from './utils/notifications';
 import { loadItems } from './utils/firestoreStorage';
 
@@ -20,15 +21,11 @@ function AppNavigator() {
 
   useEffect(() => {
     if (currentUser) {
-      // Register for push notifications
       registerForPushNotifications();
-
-      // Check for expiring items and schedule notifications
       const checkExpiring = async () => {
         const items = await loadItems();
         await scheduleExpiringNotifications(items);
       };
-
       checkExpiring();
     }
   }, [currentUser]);
@@ -41,6 +38,7 @@ function AppNavigator() {
           <Stack.Screen name="Scan" component={ScanScreen} options={{ headerShown: true, title: 'Scan Barcode' }} />
           <Stack.Screen name="AddItem" component={AddItemScreen} options={{ headerShown: true, title: 'Add Item' }} />
           <Stack.Screen name="Inventory" component={InventoryScreen} options={{ headerShown: true, title: 'My Inventory' }} />
+          <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: true, title: 'Profile' }} />
         </>
       ) : (
         <>
