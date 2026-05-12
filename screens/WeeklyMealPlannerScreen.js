@@ -13,17 +13,17 @@ export default function WeeklyMealPlannerScreen() {
     setLoading(true);
     try {
       const weeklyPlan = await getGrokWeeklyPlan();
-      // Keep locked days, only replace unlocked ones
-      const newPlan = weeklyPlan.map((day, index) => {
+      // Keep locked days exactly as they are, only replace unlocked ones
+      const newPlan = weeklyPlan.map((day) => {
         if (lockedDays.includes(day.day)) {
-          return plan[index] || day; // keep old locked
+          const existing = plan.find(d => d.day === day.day);
+          return existing || day;
         }
         return day;
       });
       setPlan(newPlan.length > 0 ? newPlan : weeklyPlan);
     } catch (error) {
       console.error('Error generating weekly plan:', error);
-      setPlan([]);
     }
     setLoading(false);
   };
@@ -54,7 +54,7 @@ export default function WeeklyMealPlannerScreen() {
         </TouchableOpacity>
       </View>
 
-      {loading ? (
+      {loading && plan.length === 0 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#e67e22" />
           <Text style={styles.loadingText}>Pantry Pro is creating your weekly plan...</Text>
@@ -77,6 +77,13 @@ export default function WeeklyMealPlannerScreen() {
             </View>
           ))}
         </ScrollView>
+      )}
+
+      {loading && plan.length > 0 && (
+        <View style={styles.smallLoading}>
+          <ActivityIndicator size="small" color="#e67e22" />
+          <Text style={styles.smallLoadingText}>Updating unlocked days...</Text>
+        </View>
       )}
 
       <Modal visible={showModal} animationType="slide" transparent={true}>
@@ -132,6 +139,8 @@ const styles = StyleSheet.create({
   dayTitle: { fontSize: 20, fontWeight: '700', color: '#3f2a1d', marginBottom: 8 },
   lockButton: { fontSize: 12, color: '#e67e22', fontWeight: '600' },
   daySummary: { fontSize: 14, color: '#7f6e5d' },
+  smallLoading: { padding: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 },
+  smallLoadingText: { color: '#e67e22', fontSize: 13 },
   modalContainer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: '#fff', borderRadius: 16, width: '90%', maxHeight: '85%', padding: 20 },
   modalTitle: { fontSize: 22, fontWeight: '700', color: '#3f2a1d', marginBottom: 16, textAlign: 'center' },
