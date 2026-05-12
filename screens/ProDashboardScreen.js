@@ -15,14 +15,14 @@ export default function ProDashboardScreen({ navigation }) {
       title: "Weekly Meal Planner",
       emoji: "📅",
       description: "Automatically generate a full 7-day meal plan from your ingredients.",
-      screen: null,
+      screen: "WeeklyMealPlanner",
     },
     {
       id: 3,
       title: "Smart Grocery List",
       emoji: "🛍️",
       description: "Auto-generate shopping lists from your meal plans.",
-      screen: null,
+      screen: "SmartShoppingList",
     },
     {
       id: 4,
