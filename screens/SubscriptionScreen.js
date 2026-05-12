@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 
 export default function SubscriptionScreen({ navigation }) {
   const handleSubscribe = (plan) => {
@@ -11,7 +11,7 @@ export default function SubscriptionScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Pantry Pal Pro</Text>
       <Text style={styles.subtitle}>Unlock meal planning & smart suggestions</Text>
 
@@ -53,7 +53,7 @@ export default function SubscriptionScreen({ navigation }) {
         <Text style={styles.benefit}>• Smart shopping lists</Text>
         <Text style={styles.benefit}>• Priority support</Text>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -61,6 +61,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f1e9',
+  },
+  content: {
     padding: 20,
   },
   title: {
