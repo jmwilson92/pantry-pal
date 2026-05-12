@@ -7,17 +7,33 @@ export default function WeeklyMealPlannerScreen() {
   const [loading, setLoading] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [lockedDays, setLockedDays] = useState([]);
 
   const generatePlan = async () => {
     setLoading(true);
     try {
       const weeklyPlan = await getGrokWeeklyPlan();
-      setPlan(weeklyPlan);
+      // Keep locked days, only replace unlocked ones
+      const newPlan = weeklyPlan.map((day, index) => {
+        if (lockedDays.includes(day.day)) {
+          return plan[index] || day; // keep old locked
+        }
+        return day;
+      });
+      setPlan(newPlan.length > 0 ? newPlan : weeklyPlan);
     } catch (error) {
       console.error('Error generating weekly plan:', error);
-      setPlan(getMockWeeklyPlan());
+      setPlan([]);
     }
     setLoading(false);
+  };
+
+  const toggleLock = (dayName) => {
+    if (lockedDays.includes(dayName)) {
+      setLockedDays(lockedDays.filter(d => d !== dayName));
+    } else {
+      setLockedDays([...lockedDays, dayName]);
+    }
   };
 
   const openDayModal = (day) => {
@@ -46,16 +62,19 @@ export default function WeeklyMealPlannerScreen() {
       ) : (
         <ScrollView style={styles.scrollView}>
           {plan.map((day, index) => (
-            <TouchableOpacity 
-              key={index} 
-              style={styles.dayCard}
-              onPress={() => openDayModal(day)}
-            >
-              <Text style={styles.dayTitle}>{day.day}</Text>
-              <Text style={styles.daySummary}>
-                {day.breakfast?.name} • {day.lunch?.name} • {day.dinner?.name}
-              </Text>
-            </TouchableOpacity>
+            <View key={index} style={styles.dayCard}>
+              <View style={styles.dayHeader}>
+                <Text style={styles.dayTitle}>{day.day}</Text>
+                <TouchableOpacity onPress={() => toggleLock(day.day)}>
+                  <Text style={styles.lockButton}>{lockedDays.includes(day.day) ? '🔒 Locked' : '🔓 Lock'}</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity onPress={() => openDayModal(day)}>
+                <Text style={styles.daySummary}>
+                  {day.breakfast?.name} • {day.lunch?.name} • {day.dinner?.name}
+                </Text>
+              </TouchableOpacity>
+            </View>
           ))}
         </ScrollView>
       )}
@@ -69,21 +88,21 @@ export default function WeeklyMealPlannerScreen() {
               <Text style={styles.mealType}>Breakfast</Text>
               <Text style={styles.mealName}>{selectedDay?.breakfast?.name}</Text>
               <Text style={styles.mealDesc}>{selectedDay?.breakfast?.description}</Text>
-              <Text style={styles.nutrients}>Key nutrients: {selectedDay?.breakfast?.nutrients}</Text>
+              <Text style={styles.nutrients}>Key nutrients: {Array.isArray(selectedDay?.breakfast?.key_nutrients) ? selectedDay.breakfast.key_nutrients.join(', ') : selectedDay?.breakfast?.key_nutrients}</Text>
             </View>
 
             <View style={styles.mealSection}>
               <Text style={styles.mealType}>Lunch</Text>
               <Text style={styles.mealName}>{selectedDay?.lunch?.name}</Text>
               <Text style={styles.mealDesc}>{selectedDay?.lunch?.description}</Text>
-              <Text style={styles.nutrients}>Key nutrients: {selectedDay?.lunch?.nutrients}</Text>
+              <Text style={styles.nutrients}>Key nutrients: {Array.isArray(selectedDay?.lunch?.key_nutrients) ? selectedDay.lunch.key_nutrients.join(', ') : selectedDay?.lunch?.key_nutrients}</Text>
             </View>
 
             <View style={styles.mealSection}>
               <Text style={styles.mealType}>Dinner</Text>
               <Text style={styles.mealName}>{selectedDay?.dinner?.name}</Text>
               <Text style={styles.mealDesc}>{selectedDay?.dinner?.description}</Text>
-              <Text style={styles.nutrients}>Key nutrients: {selectedDay?.dinner?.nutrients}</Text>
+              <Text style={styles.nutrients}>Key nutrients: {Array.isArray(selectedDay?.dinner?.key_nutrients) ? selectedDay.dinner.key_nutrients.join(', ') : selectedDay?.dinner?.key_nutrients}</Text>
             </View>
 
             <TouchableOpacity 
@@ -109,7 +128,9 @@ const styles = StyleSheet.create({
   loadingText: { marginTop: 12, fontSize: 16, color: '#7f6e5d' },
   scrollView: { flex: 1, paddingHorizontal: 16 },
   dayCard: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+  dayHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   dayTitle: { fontSize: 20, fontWeight: '700', color: '#3f2a1d', marginBottom: 8 },
+  lockButton: { fontSize: 12, color: '#e67e22', fontWeight: '600' },
   daySummary: { fontSize: 14, color: '#7f6e5d' },
   modalContainer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: '#fff', borderRadius: 16, width: '90%', maxHeight: '85%', padding: 20 },
