@@ -1,48 +1,77 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { loadItems } from '../utils/firestoreStorage';
+import { getGrokResponse } from '../utils/grokService';
 
 export default function WeeklyMealPlannerScreen({ navigation }) {
-  const mockPlan = [
-    { day: 'Monday', breakfast: 'Avocado Toast', lunch: 'Chicken Salad', dinner: 'Pasta Primavera', emoji: '🥑' },
-    { day: 'Tuesday', breakfast: 'Scrambled Eggs', lunch: 'Turkey Wrap', dinner: 'Beef Stir Fry', emoji: '🥚' },
-    { day: 'Wednesday', breakfast: 'Greek Yogurt Bowl', lunch: 'Quinoa Salad', dinner: 'Grilled Salmon', emoji: '🥗' },
-    { day: 'Thursday', breakfast: 'Oatmeal with Berries', lunch: 'Hummus Wrap', dinner: 'Chicken Curry', emoji: '🍓' },
-    { day: 'Friday', breakfast: 'Smoothie Bowl', lunch: 'Tuna Salad', dinner: 'Pizza Night', emoji: '🍕' },
-    { day: 'Saturday', breakfast: 'Pancakes', lunch: 'BLT Sandwich', dinner: 'BBQ Ribs', emoji: '🥞' },
-    { day: 'Sunday', breakfast: 'French Toast', lunch: 'Soup & Salad', dinner: 'Roast Chicken', emoji: '🍞' },
-  ];
+  const [plan, setPlan] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadPlan();
+  }, []);
+
+  const loadPlan = async () => {
+    setLoading(true);
+    const items = await loadItems();
+    const itemNames = items.map(i => i.name);
+
+    const prompt = `Create a realistic 7-day meal plan (breakfast, lunch, dinner) using these pantry items: ${itemNames.join(', ')}. Return as JSON array with keys: day, breakfast, lunch, dinner, emoji. Make it practical and fun.`;
+
+    try {
+      const response = await getGrokResponse(prompt, items);
+      let parsed;
+      try {
+        parsed = JSON.parse(response.replace(/```json|```/g, '').trim());
+      } catch (e) {
+        parsed = [
+          { day: 'Monday', breakfast: 'Avocado Toast', lunch: 'Chicken Salad', dinner: 'Pasta Primavera', emoji: '🥑' }
+        ];
+      }
+      setPlan(parsed);
+    } catch (error) {
+      console.error('Grok error:', error);
+      setPlan([
+        { day: 'Monday', breakfast: 'Avocado Toast', lunch: 'Chicken Salad', dinner: 'Pasta Primavera', emoji: '🥑' }
+      ]);
+    }
+    setLoading(false);
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Weekly Meal Planner</Text>
-      <Text style={styles.subtitle}>Your personalized 7-day plan</Text>
+      <Text style={styles.subtitle}>Powered by Grok AI • Personalized 7-day plan</Text>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {mockPlan.map((dayPlan, index) => (
-          <View key={index} style={styles.dayCard}>
-            <View style={styles.dayHeader}>
-              <Text style={styles.emoji}>{dayPlan.emoji}</Text>
-              <Text style={styles.dayName}>{dayPlan.day}</Text>
+      {loading ? (
+        <Text style={styles.loading}>Grok is planning your week... 🤖</Text>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {plan.map((dayPlan, index) => (
+            <View key={index} style={styles.dayCard}>
+              <View style={styles.dayHeader}>
+                <Text style={styles.emoji}>{dayPlan.emoji}</Text>
+                <Text style={styles.dayName}>{dayPlan.day}</Text>
+              </View>
+              <View style={styles.mealRow}>
+                <Text style={styles.mealLabel}>Breakfast</Text>
+                <Text style={styles.mealName}>{dayPlan.breakfast}</Text>
+              </View>
+              <View style={styles.mealRow}>
+                <Text style={styles.mealLabel}>Lunch</Text>
+                <Text style={styles.mealName}>{dayPlan.lunch}</Text>
+              </View>
+              <View style={styles.mealRow}>
+                <Text style={styles.mealLabel}>Dinner</Text>
+                <Text style={styles.mealName}>{dayPlan.dinner}</Text>
+              </View>
             </View>
-            
-            <View style={styles.mealRow}>
-              <Text style={styles.mealLabel}>Breakfast</Text>
-              <Text style={styles.mealName}>{dayPlan.breakfast}</Text>
-            </View>
-            <View style={styles.mealRow}>
-              <Text style={styles.mealLabel}>Lunch</Text>
-              <Text style={styles.mealName}>{dayPlan.lunch}</Text>
-            </View>
-            <View style={styles.mealRow}>
-              <Text style={styles.mealLabel}>Dinner</Text>
-              <Text style={styles.mealName}>{dayPlan.dinner}</Text>
-            </View>
-          </View>
-        ))}
-      </ScrollView>
+          ))}
+        </ScrollView>
+      )}
 
-      <TouchableOpacity style={styles.regenerateButton}>
-        <Text style={styles.regenerateText}>Regenerate Plan</Text>
+      <TouchableOpacity style={styles.regenerateButton} onPress={loadPlan}>
+        <Text style={styles.regenerateText}>Regenerate with Grok 🔄</Text>
       </TouchableOpacity>
     </View>
   );
