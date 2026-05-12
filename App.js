@@ -14,6 +14,8 @@ import ProfileScreen from './screens/ProfileScreen';
 import SubscriptionScreen from './screens/SubscriptionScreen';
 import MealSuggestionsScreen from './screens/MealSuggestionsScreen';
 import ProDashboardScreen from './screens/ProDashboardScreen';
+import WeeklyMealPlannerScreen from './screens/WeeklyMealPlannerScreen';
+import SmartShoppingListScreen from './screens/SmartShoppingListScreen';
 import { registerForPushNotifications, scheduleExpiringNotifications } from './utils/notifications';
 import { loadItems } from './utils/firestoreStorage';
 
@@ -45,6 +47,8 @@ function AppNavigator() {
           <Stack.Screen name="Subscription" component={SubscriptionScreen} options={{ headerShown: true, title: 'Pantry Pal Pro' }} />
           <Stack.Screen name="MealSuggestions" component={MealSuggestionsScreen} options={{ headerShown: true, title: 'Meal Suggestions' }} />
           <Stack.Screen name="ProDashboard" component={ProDashboardScreen} options={{ headerShown: true, title: 'Pantry Pal Pro' }} />
+          <Stack.Screen name="WeeklyMealPlanner" component={WeeklyMealPlannerScreen} options={{ headerShown: true, title: 'Weekly Meal Planner' }} />
+          <Stack.Screen name="SmartShoppingList" component={SmartShoppingListScreen} options={{ headerShown: true, title: 'Smart Grocery List' }} />
         </>
       ) : (
         <>
