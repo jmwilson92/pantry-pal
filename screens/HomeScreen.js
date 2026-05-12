@@ -1,61 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Modal, Dimensions, Image, Animated, TouchableWithoutFeedback, StatusBar, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Modal, Dimensions, Image, Animated, StatusBar, Alert } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { loadItems, markAsUsed, deleteItem } from '../utils/storage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// Separate Animated Tile Component
-const AnimatedTile = ({ item, urgency, getDaysLeftText, getPlaceholderImage, onLongPress }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const onPressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1.03,
-      friction: 4,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const onPressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 5,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  return (
-    <TouchableWithoutFeedback 
-      onPressIn={onPressIn} 
-      onPressOut={onPressOut}
-      onLongPress={onLongPress}
-    >
-      <Animated.View style={[styles.itemCard, { 
-        shadowColor: urgency,
-        transform: [{ scale: scaleAnim }] 
-      }]}>
-        <View style={styles.roundedWrapper}>
-          <Image 
-            source={{ uri: getPlaceholderImage() }} 
-            style={styles.foodImage} 
-          />
-          <View style={styles.infoOverlay}>
-            <View style={styles.nameRow}>
-              <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-              {(item.quantity || 1) > 1 && (
-                <View style={styles.quantityBadge}>
-                  <Text style={styles.quantityText}>x{item.quantity}</Text>
-                </View>
-              )}
-            </View>
-            <Text style={styles.itemDays}>{getDaysLeftText(item)}</Text>
-            <Text style={styles.itemExpiry}>Expiry: {item.expiry || 'No date'}</Text>
-          </View>
-        </View>
-      </Animated.View>
-    </TouchableWithoutFeedback>
-  );
-};
 
 export default function HomeScreen({ navigation }) {
   const [items, setItems] = useState([]);
@@ -142,35 +90,77 @@ export default function HomeScreen({ navigation }) {
 
   const getPlaceholderImage = () => 'https://cdn-icons-png.flaticon.com/512/3081/3081559.png';
 
-  const handleLongPress = (item) => {
-    Alert.alert(
-      item.name,
-      `Quantity: ${item.quantity || 1}`,
-      [
-        {
-          text: 'Mark as Used',
-          onPress: async () => {
-            await markAsUsed(item.id);
-            loadData();
-          },
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteItem(item.id);
-            loadData();
-          },
-        },
-        { text: 'Cancel', style: 'cancel' },
-      ]
+  const handleMarkAsUsed = async (id) => {
+    await markAsUsed(id);
+    loadData();
+  };
+
+  const handleDelete = async (id) => {
+    await deleteItem(id);
+    loadData();
+  };
+
+  const renderRightActions = (progress, dragX, item) => {
+    return (
+      <TouchableOpacity 
+        style={styles.deleteAction}
+        onPress={() => handleDelete(item.id)}
+      >
+        <Text style={styles.actionText}>Delete</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderLeftActions = (progress, dragX, item) => {
+    return (
+      <TouchableOpacity 
+        style={styles.consumeAction}
+        onPress={() => handleMarkAsUsed(item.id)}
+      >
+        <Text style={styles.actionText}>Consume</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderItem = (item) => {
+    const urgency = getUrgencyColor(item);
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+
+    return (
+      <Swipeable
+        key={item.id}
+        renderLeftActions={(progress, dragX) => renderLeftActions(progress, dragX, item)}
+        renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item)}
+        overshootLeft={false}
+        overshootRight={false}
+      >
+        <Animated.View style={[styles.itemCard, { shadowColor: urgency }]}>
+          <View style={styles.roundedWrapper}>
+            <Image 
+              source={{ uri: getPlaceholderImage() }} 
+              style={styles.foodImage} 
+            />
+            <View style={styles.infoOverlay}>
+              <View style={styles.nameRow}>
+                <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+                {(item.quantity || 1) > 1 && (
+                  <View style={styles.quantityBadge}>
+                    <Text style={styles.quantityText}>x{item.quantity}</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={styles.itemDays}>{getDaysLeftText(item)}</Text>
+              <Text style={styles.itemExpiry}>Expiry: {item.expiry || 'No date'}</Text>
+            </View>
+          </View>
+        </Animated.View>
+      </Swipeable>
     );
   };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8f1e9" />
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Pantry Pal 🥦</Text>
         <TouchableOpacity 
@@ -183,7 +173,6 @@ export default function HomeScreen({ navigation }) {
 
       <Text style={styles.stats}>You have {items.length} items • {filteredItems.length} shown</Text>
 
-      {/* Filter Button */}
       <View style={styles.filterRow}>
         <TouchableOpacity 
           style={styles.filterButton}
@@ -204,23 +193,10 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.emptySubtext}>Scan items to get started!</Text>
           </View>
         ) : (
-          filteredItems.map((item) => {
-            const urgency = getUrgencyColor(item);
-            return (
-              <AnimatedTile 
-                key={item.id}
-                item={item}
-                urgency={urgency}
-                getDaysLeftText={getDaysLeftText}
-                getPlaceholderImage={getPlaceholderImage}
-                onLongPress={() => handleLongPress(item)}
-              />
-            );
-          })
+          filteredItems.map(item => renderItem(item))
         )}
       </ScrollView>
 
-      {/* Filter Modal */}
       <Modal visible={showFilterModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -273,6 +249,7 @@ const styles = StyleSheet.create({
   itemCard: { 
     width: '100%',
     alignItems: 'center',
+    marginBottom: 12,
   },
   roundedWrapper: { 
     width: '100%',
@@ -315,6 +292,27 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: 'center', paddingTop: 80 },
   emptyText: { fontSize: 22, fontWeight: '600', color: '#6b5b4f' },
   emptySubtext: { fontSize: 16, color: '#8a7a6b', marginTop: 8 },
+  consumeAction: {
+    backgroundColor: '#22c55e',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 90,
+    borderRadius: 20,
+    marginVertical: 6,
+  },
+  deleteAction: {
+    backgroundColor: '#ef4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 90,
+    borderRadius: 20,
+    marginVertical: 6,
+  },
+  actionText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(63, 42, 29, 0.7)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: '#fff', borderRadius: 20, padding: 20, width: '85%', maxWidth: 320 },
   modalTitle: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20, color: '#3f2a1d' },
