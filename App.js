@@ -11,6 +11,7 @@ import ScanScreen from './screens/ScanScreen';
 import InventoryScreen from './screens/InventoryScreen';
 import AddItemScreen from './screens/AddItemScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import SubscriptionScreen from './screens/SubscriptionScreen';
 import { registerForPushNotifications, scheduleExpiringNotifications } from './utils/notifications';
 import { loadItems } from './utils/firestoreStorage';
 
@@ -39,6 +40,7 @@ function AppNavigator() {
           <Stack.Screen name="AddItem" component={AddItemScreen} options={{ headerShown: true, title: 'Add Item' }} />
           <Stack.Screen name="Inventory" component={InventoryScreen} options={{ headerShown: true, title: 'My Inventory' }} />
           <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: true, title: 'Profile' }} />
+          <Stack.Screen name="Subscription" component={SubscriptionScreen} options={{ headerShown: true, title: 'Pantry Pal Pro' }} />
         </>
       ) : (
         <>
