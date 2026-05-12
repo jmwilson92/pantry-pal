@@ -20,6 +20,7 @@ export default function ScanScreen({ navigation }) {
 
   const scanLineAnim = useRef(new Animated.Value(0)).current;
   const confettiAnims = useRef([]).current;
+  const productCache = useRef(new Map()).current; // Simple cache for API results
 
   useEffect(() => {
     if (!scanned) {
@@ -42,29 +43,43 @@ export default function ScanScreen({ navigation }) {
   }, [scanned]);
 
   const lookupProduct = async (barcode) => {
+    // Return cached result if we have it
+    if (productCache.has(barcode)) {
+      return productCache.get(barcode);
+    }
+
     try {
       const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
       
-      // Check if response is actually JSON
       const contentType = response.headers.get('content-type');
       if (!response.ok || !contentType || !contentType.includes('application/json')) {
-        console.log('API returned non-JSON or error:', response.status);
-        return { name: `Product ${barcode.slice(-6)}`, brand: '', image: null };
+        // 429 = rate limit, just use fallback silently
+        if (response.status === 429) {
+          console.log('Open Food Facts rate limit hit - using fallback name');
+        }
+        const fallback = { name: `Product ${barcode.slice(-6)}`, brand: '', image: null };
+        productCache.set(barcode, fallback);
+        return fallback;
       }
 
       const data = await response.json();
 
       if (data.status === 1 && data.product) {
-        return {
+        const result = {
           name: data.product.product_name || `Product ${barcode.slice(-6)}`,
           brand: data.product.brands || '',
           image: data.product.image_url || null,
         };
+        productCache.set(barcode, result);
+        return result;
       }
     } catch (e) {
-      console.log('API error (handled gracefully):', e.message);
+      console.log('API error (handled):', e.message);
     }
-    return { name: `Product ${barcode.slice(-6)}`, brand: '', image: null };
+
+    const fallback = { name: `Product ${barcode.slice(-6)}`, brand: '', image: null };
+    productCache.set(barcode, fallback);
+    return fallback;
   };
 
   const handleBarCodeScanned = async ({ type, data }) => {
