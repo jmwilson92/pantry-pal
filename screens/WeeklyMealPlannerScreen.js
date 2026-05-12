@@ -34,8 +34,10 @@ export default function WeeklyMealPlannerScreen() {
         setPlan(JSON.parse(savedPlan));
       } else {
         const newPlan = await getGrokWeeklyPlan();
-        setPlan(newPlan);
-        await AsyncStorage.setItem('weeklyPlan', JSON.stringify(newPlan));
+        if (Array.isArray(newPlan) && newPlan.length > 0) {
+          setPlan(newPlan);
+          await AsyncStorage.setItem('weeklyPlan', JSON.stringify(newPlan));
+        }
       }
     } catch (error) {
       console.error('Error loading plan:', error);
@@ -49,6 +51,12 @@ export default function WeeklyMealPlannerScreen() {
     try {
       const newPlan = await getGrokWeeklyPlan();
       
+      if (!Array.isArray(newPlan) || newPlan.length === 0) {
+        Alert.alert('Error', 'Failed to generate new plan. Please try again.');
+        setLoading(false);
+        return;
+      }
+
       // Keep locked days, replace unlocked ones
       const updatedPlan = plan.map((dayPlan, index) => {
         if (lockedDays.includes(index)) {
@@ -60,6 +68,7 @@ export default function WeeklyMealPlannerScreen() {
       
       setPlan(updatedPlan);
       await AsyncStorage.setItem('weeklyPlan', JSON.stringify(updatedPlan));
+      console.log('Regenerated plan with', updatedPlan.length, 'days, locked:', lockedDays.length);
     } catch (error) {
       console.error('Error regenerating plan:', error);
       Alert.alert('Error', 'Could not regenerate plan');
@@ -115,34 +124,40 @@ export default function WeeklyMealPlannerScreen() {
       </View>
 
       <ScrollView style={styles.scrollView}>
-        {plan.map((dayPlan, index) => (
-          <View key={index} style={styles.dayCard}>
-            <View style={styles.dayHeader}>
-              <Text style={styles.dayTitle}>{dayPlan.day}</Text>
-              <TouchableOpacity 
-                onPress={() => toggleLock(index)}
-                style={[styles.lockButton, lockedDays.includes(index) && styles.lockedButton]}
-              >
-                <Text style={styles.lockText}>
-                  {lockedDays.includes(index) ? '🔒 Locked' : '🔓 Lock'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {['breakfast', 'lunch', 'dinner'].map(mealType => (
-              <View key={mealType} style={styles.mealRow}>
-                <Text style={styles.mealType}>{mealType.charAt(0).toUpperCase() + mealType.slice(1)}</Text>
-                <Text style={styles.mealName}>{dayPlan[mealType]?.name}</Text>
-                <Text style={styles.mealDesc}>{dayPlan[mealType]?.description}</Text>
-                {dayPlan[mealType]?.key_nutrients && (
-                  <Text style={styles.nutrients}>
-                    Key nutrients: {dayPlan[mealType].key_nutrients.join(', ')}
+        {plan.length > 0 ? (
+          plan.map((dayPlan, index) => (
+            <View key={index} style={styles.dayCard}>
+              <View style={styles.dayHeader}>
+                <Text style={styles.dayTitle}>{dayPlan.day}</Text>
+                <TouchableOpacity 
+                  onPress={() => toggleLock(index)}
+                  style={[styles.lockButton, lockedDays.includes(index) && styles.lockedButton]}
+                >
+                  <Text style={styles.lockText}>
+                    {lockedDays.includes(index) ? '🔒 Locked' : '🔓 Lock'}
                   </Text>
-                )}
+                </TouchableOpacity>
               </View>
-            ))}
+
+              {['breakfast', 'lunch', 'dinner'].map(mealType => (
+                <View key={mealType} style={styles.mealRow}>
+                  <Text style={styles.mealType}>{mealType.charAt(0).toUpperCase() + mealType.slice(1)}</Text>
+                  <Text style={styles.mealName}>{dayPlan[mealType]?.name}</Text>
+                  <Text style={styles.mealDesc}>{dayPlan[mealType]?.description}</Text>
+                  {dayPlan[mealType]?.key_nutrients && (
+                    <Text style={styles.nutrients}>
+                      Key nutrients: {Array.isArray(dayPlan[mealType].key_nutrients) ? dayPlan[mealType].key_nutrients.join(', ') : dayPlan[mealType].key_nutrients}
+                    </Text>
+                  )}
+                </View>
+              ))}
+            </View>
+          ))
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No meal plan yet. Tap Regenerate to start.</Text>
           </View>
-        ))}
+        )}
       </ScrollView>
 
       {allLocked && (
@@ -185,4 +200,6 @@ const styles = StyleSheet.create({
   transferText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   loadingOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   loadingText: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
+  emptyText: { fontSize: 18, color: '#7f6e5d', textAlign: 'center' },
 });
