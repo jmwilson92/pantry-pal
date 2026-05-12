@@ -22,16 +22,18 @@ export default function HomeScreen() {
 
     console.log('HomeScreen: Current user UID:', user.uid);
 
-    // Show ALL pantry items (temporary fix until we ensure every item has userId/uid field)
-    const q = query(collection(db, 'pantries'));
+    // Correct path: users/{uid}/pantry
+    const pantryRef = collection(db, 'users', user.uid, 'pantry');
+    const q = query(pantryRef);
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const allItems = snapshot.docs.map(doc => ({
+      const items = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
 
-      console.log('HomeScreen: Found', allItems.length, 'items in pantry (showing all)');
-      setPantryItems(allItems);
+      console.log('HomeScreen: Found', items.length, 'items in users/' + user.uid + '/pantry');
+      setPantryItems(items);
     });
 
     return () => unsubscribe();
@@ -39,7 +41,7 @@ export default function HomeScreen() {
 
   const handleDelete = async (item) => {
     try {
-      await deleteDoc(doc(db, 'pantries', item.id));
+      await deleteDoc(doc(db, 'users', user.uid, 'pantry', item.id));
       Alert.alert('Deleted', 'Item removed from pantry');
     } catch (error) {
       console.error('Delete error:', error);
@@ -50,11 +52,11 @@ export default function HomeScreen() {
   const handleMarkUsed = async (item) => {
     try {
       if ((item.quantity || 1) > 1) {
-        await updateDoc(doc(db, 'pantries', item.id), {
+        await updateDoc(doc(db, 'users', user.uid, 'pantry', item.id), {
           quantity: (item.quantity || 1) - 1
         });
       } else {
-        await deleteDoc(doc(db, 'pantries', item.id));
+        await deleteDoc(doc(db, 'users', user.uid, 'pantry', item.id));
       }
     } catch (error) {
       console.error('Mark used error:', error);
