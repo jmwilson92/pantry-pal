@@ -3,7 +3,7 @@ const GROK_API_KEY = 'YOUR_XAI_API_KEY_HERE';
 const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
 
 export async function getGrokMealSuggestions() {
-  const prompt = `You are a creative chef. Generate 7 unique, delicious meal ideas with real appetizing names (not generic like 'Meal 1'). For each meal provide:
+  const prompt = `You are a creative chef. Generate 7 unique, delicious meal ideas with real appetizing names. For each meal provide:
 - Creative name
 - Short tasty description (2-3 sentences)
 - 4-6 main ingredients as array
@@ -13,32 +13,32 @@ Format as JSON array. Be creative and varied even if pantry is empty.`;
 
   try {
     const response = await fetch(GROK_API_URL, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROK_API_KEY}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${GROK_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'grok-3-latest',
-        messages: [{ role: 'user', content: prompt }],
+        model: "grok-3-latest",
+        messages: [{ role: "user", content: prompt }],
         temperature: 0.9,
-        max_tokens: 1500,
+        max_tokens: 1200,
       }),
     });
 
     const data = await response.json();
-    
+
     if (!data.choices || !data.choices[0]) {
-      console.error('Grok API returned no choices:', data);
+      console.error("Grok API returned no choices:", data);
       return getMockMeals();
     }
 
     const content = data.choices[0].message.content;
     const meals = JSON.parse(content.replace(/```json|```/g, '').trim());
-    
+
     return meals.map(meal => ({
       ...meal,
-      image: `https://picsum.photos/seed/${encodeURIComponent(meal.name || 'food')}/300/200`
+      image: `https://picsum.photos/id/${Math.floor(Math.random() * 1000)}/300/200`
     }));
   } catch (error) {
     console.error('Grok API error:', error);
@@ -59,17 +59,17 @@ Format as JSON array with days Monday to Sunday, each with breakfast, lunch, din
         'Authorization': `Bearer ${GROK_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'grok-3-latest',
+        model: "grok-3-latest",
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.85,
-        max_tokens: 2000,
+        max_tokens: 1800,
       }),
     });
 
     const data = await response.json();
-    
+
     if (!data.choices || !data.choices[0]) {
-      console.error('Grok weekly plan API error:', data);
+      console.error("Grok weekly plan API error:", data);
       return getMockWeeklyPlan();
     }
 
@@ -79,7 +79,6 @@ Format as JSON array with days Monday to Sunday, each with breakfast, lunch, din
     if (Array.isArray(plan)) {
       return plan;
     } else {
-      console.error('Weekly plan is not an array:', plan);
       return getMockWeeklyPlan();
     }
   } catch (error) {
@@ -99,22 +98,21 @@ export async function getCookingInstructions(mealName, ingredients) {
         'Authorization': `Bearer ${GROK_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'grok-3-latest',
+        model: "grok-3-latest",
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: 600,
+        max_tokens: 500,
       }),
     });
 
     const data = await response.json();
-    
+
     if (!data.choices || !data.choices[0]) {
       return 'Sorry, could not generate instructions right now. Try again later.';
     }
 
     return data.choices[0].message.content;
   } catch (error) {
-    console.error('Cooking instructions error:', error);
     return 'Sorry, could not generate instructions right now. Try again later.';
   }
 }
