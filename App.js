@@ -11,9 +11,21 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">
-        <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Pantry Pal 🥬' }} />
-        <Stack.Screen name="Scan" component={ScanScreen} options={{ title: 'Scan Barcode' }} />
-        <Stack.Screen name="Inventory" component={InventoryScreen} options={{ title: 'My Inventory' }} />
+        <Stack.Screen 
+          name="Home" 
+          component={HomeScreen} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="Scan" 
+          component={ScanScreen} 
+          options={{ title: 'Scan Barcode' }} 
+        />
+        <Stack.Screen 
+          name="Inventory" 
+          component={InventoryScreen} 
+          options={{ title: 'My Inventory' }} 
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
