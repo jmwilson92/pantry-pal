@@ -8,11 +8,10 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { getGrokWeeklyPlan } from '../utils/grokService';
 import { useAuth } from '../context/AuthContext';
 import { addToGroceryList } from '../utils/groceryStorage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function WeeklyMealPlannerScreen() {
   const [weeklyPlan, setWeeklyPlan] = useState([]);
@@ -23,52 +22,23 @@ export default function WeeklyMealPlannerScreen() {
   const navigation = useNavigation();
   const { user } = useAuth();
 
-  // Load plan from AsyncStorage when screen comes into focus
-  useFocusEffect(
-    React.useCallback(() => {
-      const loadSavedPlan = async () => {
-        try {
-          const savedPlan = await AsyncStorage.getItem('weeklyPlan');
-          const savedLocked = await AsyncStorage.getItem('lockedDays');
-          
-          if (savedPlan) {
-            setWeeklyPlan(JSON.parse(savedPlan));
-          } else {
-            // Only load from Grok if no saved plan
-            const plan = await getGrokWeeklyPlan();
-            if (plan && plan.length > 0) {
-              setWeeklyPlan(plan);
-              await AsyncStorage.setItem('weeklyPlan', JSON.stringify(plan));
-            } else {
-              setError("Failed to load meal plan");
-            }
-          }
-          
-          if (savedLocked) {
-            setLockedDays(JSON.parse(savedLocked));
-          }
-        } catch (err) {
-          console.error("Load plan error:", err);
+  useEffect(() => {
+    const loadPlan = async () => {
+      try {
+        const plan = await getGrokWeeklyPlan();
+        if (plan && plan.length > 0) {
+          setWeeklyPlan(plan);
+        } else {
           setError("Failed to load meal plan");
         }
-        setIsLoading(false);
-      };
-      loadSavedPlan();
-    }, [])
-  );
-
-  // Save plan and locked days whenever they change
-  useEffect(() => {
-    const savePlan = async () => {
-      if (weeklyPlan.length > 0) {
-        await AsyncStorage.setItem('weeklyPlan', JSON.stringify(weeklyPlan));
+      } catch (err) {
+        console.error("Load plan error:", err);
+        setError("Failed to load meal plan");
       }
-      if (lockedDays.length > 0) {
-        await AsyncStorage.setItem('lockedDays', JSON.stringify(lockedDays));
-      }
+      setIsLoading(false);
     };
-    savePlan();
-  }, [weeklyPlan, lockedDays]);
+    loadPlan();
+  }, []);
 
   const toggleLock = (day) => {
     if (lockedDays.includes(day)) {
@@ -173,9 +143,6 @@ export default function WeeklyMealPlannerScreen() {
       {weeklyPlan.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No meal plan loaded</Text>
-          <TouchableOpacity style={styles.button} onPress={handleRegenerate}>
-            <Text style={styles.buttonText}>Generate Weekly Plan</Text>
-          </TouchableOpacity>
         </View>
       ) : (
         weeklyPlan.map((dayPlan, index) => {
@@ -220,7 +187,7 @@ export default function WeeklyMealPlannerScreen() {
           style={styles.transferButton} 
           onPress={handleTransferToGroceryList}
         >
-          <Text style={styles.transferText}>🛒 Transfer to Grocery List</Text>
+          <Text style={styles.transferText}>🛍️ Transfer to Grocery List</Text>
         </TouchableOpacity>
       )}
 
@@ -233,13 +200,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f1e9', padding: 16 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   title: { fontSize: 24, fontWeight: 'bold', color: '#3f2a1d' },
-  regenerateButton: { backgroundColor: '#e67e22', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, alignSelf: 'flex-end', marginBottom: 16 },
-  regenerateText: { color: '#fff', fontWeight: '600' },
+  regenerateButton: { backgroundColor: '#e67e22', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, alignSelf: 'center', marginBottom: 20 },
+  regenerateText: { color: '#fff', fontWeight: '600', fontSize: 15 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: 12, color: '#7f6e5d' },
   errorText: { color: '#e74c3c', textAlign: 'center', marginBottom: 16 },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
-  emptyText: { fontSize: 18, color: '#7f6e5d', marginBottom: 20 },
+  emptyText: { fontSize: 18, color: '#7f6e5d' },
   dayCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
   dayHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   dayTitle: { fontSize: 18, fontWeight: 'bold', color: '#3f2a1d' },
@@ -253,6 +220,4 @@ const styles = StyleSheet.create({
   nutrients: { fontSize: 12, color: '#27ae60', fontStyle: 'italic' },
   transferButton: { backgroundColor: '#27ae60', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 20 },
   transferText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  button: { backgroundColor: '#e67e22', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
-  buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
 });
