@@ -107,7 +107,7 @@ export default function HomeScreen({ navigation }) {
         onPress={() => handleDelete(item.id)}
       >
         <Text style={styles.actionEmoji}>🗑️</Text>
-        <Text style={styles.actionLabel}>Delete</Text>
+        <Text style={styles.actionLabel}>Compost</Text>
       </TouchableOpacity>
     );
   };
@@ -294,41 +294,30 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 22, fontWeight: '600', color: '#6b5b4f' },
   emptySubtext: { fontSize: 16, color: '#8a7a6b', marginTop: 8 },
   consumeAction: {
-    backgroundColor: '#4ade80',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    width: 85,
-    borderTopLeftRadius: 20,
-    borderBottomLeftRadius: 20,
-    marginVertical: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    width: 70,
+    paddingVertical: 8,
   },
   deleteAction: {
-    backgroundColor: '#f87171',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    width: 85,
-    borderTopRightRadius: 20,
-    borderBottomRightRadius: 20,
-    marginVertical: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    width: 70,
+    paddingVertical: 8,
   },
   actionEmoji: {
-    fontSize: 22,
-    marginBottom: 2,
+    fontSize: 26,
+    marginBottom: 4,
   },
   actionLabel: {
     color: '#fff',
-    fontWeight: '700',
-    fontSize: 13,
+    fontWeight: '600',
+    fontSize: 12,
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(63, 42, 29, 0.7)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: '#fff', borderRadius: 20, padding: 20, width: '85%', maxWidth: 320 },
