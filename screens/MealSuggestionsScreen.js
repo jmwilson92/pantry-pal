@@ -50,9 +50,7 @@ export default function MealSuggestionsScreen() {
     });
   };
 
-  useEffect(() => {
-    generateMeals();
-  }, []);
+  // Removed automatic generation on mount - only when button is pressed
 
   return (
     <View style={styles.container}>
@@ -70,31 +68,37 @@ export default function MealSuggestionsScreen() {
         </View>
       ) : (
         <ScrollView style={styles.scrollView}>
-          {meals.map((meal, index) => (
-            <View key={index} style={styles.mealCard}>
-              <View style={styles.mealInfo}>
-                <Text style={styles.mealName}>{meal.name}</Text>
-                <Text style={styles.mealDescription}>{meal.description}</Text>
-                
-                {meal.ingredients && meal.ingredients.length > 0 && (
-                  <View style={styles.ingredientsContainer}>
-                    <Text style={styles.ingredientsTitle}>Ingredients:</Text>
-                    {meal.ingredients.slice(0, 4).map((ing, i) => (
-                      <Text key={i} style={styles.ingredientItem}>• {ing}</Text>
-                    ))}
-                    {meal.ingredients.length > 4 && <Text style={styles.moreText}>+{meal.ingredients.length - 4} more</Text>}
-                  </View>
-                )}
-
-                <TouchableOpacity 
-                  style={styles.cookButton}
-                  onPress={() => handleCookThis(meal)}
-                >
-                  <Text style={styles.cookButtonText}>Cook this</Text>
-                </TouchableOpacity>
-              </View>
+          {meals.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Tap Regenerate to get meal ideas</Text>
             </View>
-          ))}
+          ) : (
+            meals.map((meal, index) => (
+              <View key={index} style={styles.mealCard}>
+                <View style={styles.mealInfo}>
+                  <Text style={styles.mealName}>{meal.name}</Text>
+                  <Text style={styles.mealDescription}>{meal.description}</Text>
+                  
+                  {meal.ingredients && meal.ingredients.length > 0 && (
+                    <View style={styles.ingredientsContainer}>
+                      <Text style={styles.ingredientsTitle}>Ingredients:</Text>
+                      {meal.ingredients.slice(0, 4).map((ing, i) => (
+                        <Text key={i} style={styles.ingredientItem}>• {ing}</Text>
+                      ))}
+                      {meal.ingredients.length > 4 && <Text style={styles.moreText}>+{meal.ingredients.length - 4} more</Text>
+                    </View>
+                  )}
+
+                  <TouchableOpacity 
+                    style={styles.cookButton}
+                    onPress={() => handleCookThis(meal)}
+                  >
+                    <Text style={styles.cookButtonText}>Cook this</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
+          )}
         </ScrollView>
       )}
 
@@ -176,4 +180,6 @@ const styles = StyleSheet.create({
   instructionsText: { fontSize: 15, lineHeight: 22, color: '#3f2a1d' },
   closeButton: { backgroundColor: '#e67e22', paddingVertical: 12, borderRadius: 8, alignItems: 'center', marginTop: 16 },
   closeButtonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 },
+  emptyText: { fontSize: 16, color: '#7f6e5d', textAlign: 'center' },
 });
