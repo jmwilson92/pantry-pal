@@ -106,7 +106,8 @@ export default function HomeScreen({ navigation }) {
         style={styles.deleteAction}
         onPress={() => handleDelete(item.id)}
       >
-        <Text style={styles.actionText}>Delete</Text>
+        <Text style={styles.actionEmoji}>🗑️</Text>
+        <Text style={styles.actionLabel}>Delete</Text>
       </TouchableOpacity>
     );
   };
@@ -117,7 +118,8 @@ export default function HomeScreen({ navigation }) {
         style={styles.consumeAction}
         onPress={() => handleMarkAsUsed(item.id)}
       >
-        <Text style={styles.actionText}>Consume</Text>
+        <Text style={styles.actionEmoji}>🍽️</Text>
+        <Text style={styles.actionLabel}>Eat</Text>
       </TouchableOpacity>
     );
   };
@@ -292,25 +294,41 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 22, fontWeight: '600', color: '#6b5b4f' },
   emptySubtext: { fontSize: 16, color: '#8a7a6b', marginTop: 8 },
   consumeAction: {
-    backgroundColor: '#22c55e',
+    backgroundColor: '#4ade80',
     justifyContent: 'center',
     alignItems: 'center',
-    width: 90,
-    borderRadius: 20,
+    width: 85,
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
     marginVertical: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   deleteAction: {
-    backgroundColor: '#ef4444',
+    backgroundColor: '#f87171',
     justifyContent: 'center',
     alignItems: 'center',
-    width: 90,
-    borderRadius: 20,
+    width: 85,
+    borderTopRightRadius: 20,
+    borderBottomRightRadius: 20,
     marginVertical: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  actionText: {
+  actionEmoji: {
+    fontSize: 22,
+    marginBottom: 2,
+  },
+  actionLabel: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 13,
   },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(63, 42, 29, 0.7)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: '#fff', borderRadius: 20, padding: 20, width: '85%', maxWidth: 320 },
