@@ -9,6 +9,7 @@ import SignUpScreen from './screens/SignUpScreen';
 import HomeScreen from './screens/HomeScreen';
 import ScanScreen from './screens/ScanScreen';
 import InventoryScreen from './screens/InventoryScreen';
+import AddItemScreen from './screens/AddItemScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -22,6 +23,7 @@ function AppNavigator() {
         <>
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="Scan" component={ScanScreen} options={{ headerShown: true, title: 'Scan Barcode' }} />
+          <Stack.Screen name="AddItem" component={AddItemScreen} options={{ headerShown: true, title: 'Add Item' }} />
           <Stack.Screen name="Inventory" component={InventoryScreen} options={{ headerShown: true, title: 'My Inventory' }} />
         </>
       ) : (
