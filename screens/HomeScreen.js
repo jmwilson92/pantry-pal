@@ -22,7 +22,6 @@ export default function HomeScreen() {
 
     console.log('HomeScreen: Current user UID:', user.uid);
 
-    // Correct path: users/{uid}/pantry
     const pantryRef = collection(db, 'users', user.uid, 'pantry');
     const q = query(pantryRef);
 
@@ -42,9 +41,7 @@ export default function HomeScreen() {
   const handleDelete = async (item) => {
     try {
       await deleteDoc(doc(db, 'users', user.uid, 'pantry', item.id));
-      Alert.alert('Deleted', 'Item removed from pantry');
     } catch (error) {
-      console.error('Delete error:', error);
       Alert.alert('Error', 'Failed to delete item');
     }
   };
@@ -59,32 +56,37 @@ export default function HomeScreen() {
         await deleteDoc(doc(db, 'users', user.uid, 'pantry', item.id));
       }
     } catch (error) {
-      console.error('Mark used error:', error);
       Alert.alert('Error', 'Failed to update item');
     }
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.itemContainer}>
-      <View style={styles.itemContent}>
-        {item.photoUrl && (
-          <Image source={{ uri: item.photoUrl }} style={styles.itemImage} />
+  const renderItem = ({ item }) => {
+    const hasPhoto = item.photoUri || item.photoUrl;
+    const photoSource = hasPhoto ? { uri: item.photoUri || item.photoUrl } : null;
+    const expiryDate = item.expiry || item.expirationDate;
+
+    return (
+      <View style={styles.itemContainer}>
+        <View style={styles.itemContent}>
+          {photoSource && (
+            <Image source={photoSource} style={styles.itemImage} />
+          )}
+          <View style={styles.itemText}>
+            <Text style={styles.itemName}>{item.name}</Text>
+            <Text style={styles.itemDetails}>
+              {(item.quantity || 1)} {(item.quantity || 1) > 1 ? 'items' : 'item'}
+              {expiryDate && ` • Expires ${new Date(expiryDate).toLocaleDateString()}`}
+            </Text>
+          </View>
+        </View>
+        {(item.quantity || 1) > 1 && (
+          <View style={styles.quantityBadge}>
+            <Text style={styles.quantityText}>{item.quantity}</Text>
+          </View>
         )}
-        <View style={styles.itemText}>
-          <Text style={styles.itemName}>{item.name}</Text>
-          <Text style={styles.itemDetails}>
-            {item.quantity || 1} {(item.quantity || 1) > 1 ? 'items' : 'item'}
-            {item.expirationDate && ` • Expires ${new Date(item.expirationDate).toLocaleDateString()}`}
-          </Text>
-        </View>
       </View>
-      {(item.quantity || 1) > 1 && (
-        <View style={styles.quantityBadge}>
-          <Text style={styles.quantityText}>{item.quantity}</Text>
-        </View>
-      )}
-    </View>
-  );
+    );
+  };
 
   const renderHiddenItem = ({ item }) => (
     <View style={styles.rowBack}>
@@ -92,15 +94,16 @@ export default function HomeScreen() {
         style={styles.backBtn}
         onPress={() => handleDelete(item)}
       >
-        <Text style={styles.backText}>🗑️</Text>
-        <Text style={styles.backText}>Compost</Text>
+        <Text style={styles.backEmoji}>🗑️</Text>
+        <Text style={styles.backLabel}>Compost</Text>
       </TouchableOpacity>
+
       <TouchableOpacity
         style={styles.backBtn}
         onPress={() => handleMarkUsed(item)}
       >
-        <Text style={styles.backText}>🍽️</Text>
-        <Text style={styles.backText}>Eat</Text>
+        <Text style={styles.backEmoji}>🍽️</Text>
+        <Text style={styles.backLabel}>Eat</Text>
       </TouchableOpacity>
     </View>
   );
@@ -156,8 +159,9 @@ const styles = StyleSheet.create({
   quantityBadge: { backgroundColor: '#27ae60', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 2, alignSelf: 'flex-start' },
   quantityText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
   rowBack: { alignItems: 'center', flex: 1, flexDirection: 'row', justifyContent: 'space-between', paddingLeft: 15, marginHorizontal: 16, marginVertical: 6, borderRadius: 12 },
-  backBtn: { alignItems: 'center', justifyContent: 'center', width: 75, height: '100%' },
-  backText: { color: '#000', fontSize: 12, fontWeight: '600' },
+  backBtn: { alignItems: 'center', justifyContent: 'center', width: 75, height: '100%', backgroundColor: 'transparent' },
+  backEmoji: { fontSize: 22, marginBottom: 2 },
+  backLabel: { color: '#000', fontSize: 11, fontWeight: '600' },
   fab: { position: 'absolute', bottom: 30, right: 30, width: 60, height: 60, borderRadius: 30, backgroundColor: '#e67e22', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 8 },
   fabText: { fontSize: 32, color: '#fff', fontWeight: 'bold' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
