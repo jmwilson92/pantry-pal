@@ -76,11 +76,11 @@ export async function getGrokWeeklyPlan() {
   ];
 
   const prompt = `You are a creative meal planner. Generate a full 7-day meal plan.
-Return ONLY a valid JSON ARRAY (not an object) in this exact format:
+Return ONLY a valid JSON ARRAY in this exact format (no object, no extra text):
 [
   {"day": "Monday", "breakfast": {"name": "...", "description": "...", "key_nutrients": ["..."]}, "lunch": {...}, "dinner": {...}},
   {"day": "Tuesday", "breakfast": {...}, "lunch": {...}, "dinner": {...}},
-  ... for all 7 days
+  ... (all 7 days)
 ]
 Make every meal different and creative.`;
 
@@ -107,17 +107,32 @@ Make every meal different and creative.`;
       return [];
     }
 
-    const content = data.choices[0].message.content;
-    let plan = JSON.parse(content.replace(/```json|```/g, '').trim());
+    const content = data.choices[0].message.content.trim();
+    console.log("Raw content from Grok:", content);
+
+    let plan;
+    try {
+      plan = JSON.parse(content.replace(/```json|```/g, '').trim());
+    } catch (parseError) {
+      console.error("JSON parse failed, trying to extract array...", parseError);
+      // Fallback: try to find JSON array in the text
+      const match = content.match(/\[.*\]/s);
+      if (match) {
+        plan = JSON.parse(match[0]);
+      } else {
+        return [];
+      }
+    }
 
     if (!Array.isArray(plan)) {
-      console.log("Weekly plan was an object, converting to array...");
+      console.log("Plan was an object, converting to array...");
       plan = Object.keys(plan).map(day => ({
         day,
         ...plan[day]
       }));
     }
 
+    console.log("Parsed plan has", plan.length, "days");
     return plan;
   } catch (error) {
     console.error('Grok weekly plan error:', error);
