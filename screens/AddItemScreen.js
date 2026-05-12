@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -6,12 +6,18 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   Image, 
-  Alert 
+  Alert, 
+  Animated, 
+  Dimensions 
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { saveItem } from '../utils/firestoreStorage';
 import { useAuth } from '../context/AuthContext';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const FOOD_EMOJIS = ['🍎', '🥑', '🥦', '🍞', '🥓', '🍒', '🥬', '🍌', '🥜', '🍪'];
 
 export default function AddItemScreen({ navigation, route }) {
   const { currentUser } = useAuth();
@@ -23,6 +29,9 @@ export default function AddItemScreen({ navigation, route }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [photoUri, setPhotoUri] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  const confettiAnims = useRef([]).current;
 
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -57,12 +66,53 @@ export default function AddItemScreen({ navigation, route }) {
     }
   };
 
+  const triggerFoodConfetti = () => {
+    setShowConfetti(true);
+    confettiAnims.length = 0;
+
+    for (let i = 0; i < 14; i++) {
+      const anim = {
+        translateY: new Animated.Value(SCREEN_HEIGHT * 0.7),
+        translateX: new Animated.Value(Math.random() * SCREEN_WIDTH - 50),
+        rotate: new Animated.Value(0),
+        opacity: new Animated.Value(1),
+        emoji: FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)],
+      };
+      confettiAnims.push(anim);
+
+      Animated.parallel([
+        Animated.timing(anim.translateY, {
+          toValue: -120,
+          duration: 1300 + Math.random() * 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(anim.rotate, {
+          toValue: Math.random() > 0.5 ? 1 : -1,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(anim.opacity, {
+          toValue: 0,
+          duration: 1500,
+          delay: 500,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+
+    setTimeout(() => {
+      setShowConfetti(false);
+      confettiAnims.length = 0;
+    }, 2000);
+  };
+
   const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert('Error', 'Please enter an item name');
       return;
     }
     setLoading(true);
+
     const item = {
       name: name.trim(),
       barcode: barcode || null,
@@ -73,9 +123,15 @@ export default function AddItemScreen({ navigation, route }) {
       photoUri: photoUri || null,
       userId: currentUser.uid,
     };
+
     await saveItem(item);
     setLoading(false);
-    navigation.goBack();
+
+    triggerFoodConfetti();
+
+    setTimeout(() => {
+      navigation.goBack();
+    }, 1800);
   };
 
   return (
@@ -129,6 +185,28 @@ export default function AddItemScreen({ navigation, route }) {
           {loading ? 'Saving...' : 'Add to Pantry'}
         </Text>
       </TouchableOpacity>
+
+      {showConfetti && (
+        <View style={styles.confettiContainer} pointerEvents="none">
+          {confettiAnims.map((anim, index) => (
+            <Animated.Text
+              key={index}
+              style={{
+                position: 'absolute',
+                fontSize: 36,
+                transform: [
+                  { translateX: anim.translateX },
+                  { translateY: anim.translateY },
+                  { rotate: anim.rotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) },
+                ],
+                opacity: anim.opacity,
+              }}
+            >
+              {anim.emoji}
+            </Animated.Text>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -203,5 +281,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '700',
+  },
+  confettiContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 100,
   },
 });
