@@ -36,7 +36,6 @@ export default function HomeScreen() {
   const handleDelete = async (item) => {
     try {
       await deleteDoc(doc(db, 'pantries', item.id));
-      Alert.alert('Deleted', 'Item removed from pantry');
     } catch (error) {
       Alert.alert('Error', 'Failed to delete item');
     }
@@ -51,7 +50,6 @@ export default function HomeScreen() {
       } else {
         await deleteDoc(doc(db, 'pantries', item.id));
       }
-      Alert.alert('Updated', 'Item marked as used');
     } catch (error) {
       Alert.alert('Error', 'Failed to update item');
     }
@@ -103,9 +101,6 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Pantry Pal 🥬</Text>
         <View style={styles.headerRight}>
-          <TouchableOpacity onPress={() => navigation.navigate('ProDashboard')}>
-            <Text style={styles.proButton}>Pro</Text>
-          </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
             <Text style={styles.profileIcon}>👤</Text>
           </TouchableOpacity>
@@ -142,7 +137,6 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#3f2a1d' },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  proButton: { fontSize: 16, fontWeight: '600', color: '#e67e22', paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#fff', borderRadius: 20 },
   profileIcon: { fontSize: 24 },
   itemContainer: { backgroundColor: '#fff', marginHorizontal: 16, marginVertical: 6, borderRadius: 12, padding: 16, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
   itemContent: { flexDirection: 'row', alignItems: 'center', flex: 1 },
