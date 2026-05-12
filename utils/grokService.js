@@ -78,11 +78,11 @@ export async function getGrokWeeklyPlan() {
   const prompt = `You are a creative meal planner. Generate a full 7-day meal plan.
 Return ONLY a valid JSON ARRAY in this exact format (no object, no extra text):
 [
-  {"day": "Monday", "breakfast": {"name": "...", "description": "...", "key_nutrients": ["..."]}, "lunch": {...}, "dinner": {...}},
+  {"day": "Monday", "breakfast": {"name": "...", "description": "...", "key_nutrients": ["..."], "ingredients": ["1/2 pound chicken", "2 tbsp butter"]}, "lunch": {...}, "dinner": {...}},
   {"day": "Tuesday", "breakfast": {...}, "lunch": {...}, "dinner": {...}},
   ... (all 7 days)
 ]
-Make every meal different and creative.`;
+Make every meal different and creative. Include realistic ingredients with quantities for each meal.`;
 
   try {
     const response = await fetch(GROK_API_URL, {
@@ -115,7 +115,6 @@ Make every meal different and creative.`;
       plan = JSON.parse(content.replace(/```json|```/g, '').trim());
     } catch (parseError) {
       console.error("JSON parse failed, trying to extract array...", parseError);
-      // Fallback: try to find JSON array in the text
       const match = content.match(/\[.*\]/s);
       if (match) {
         plan = JSON.parse(match[0]);
