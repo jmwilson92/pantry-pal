@@ -22,6 +22,7 @@ export default function HomeScreen() {
 
     console.log('HomeScreen: Current user UID:', user.uid);
 
+    // Show ALL pantry items (temporary fix until we ensure every item has userId/uid field)
     const q = query(collection(db, 'pantries'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const allItems = snapshot.docs.map(doc => ({
@@ -29,13 +30,8 @@ export default function HomeScreen() {
         ...doc.data()
       }));
 
-      // Filter for this user's items (handles both userId and uid field names)
-      const userItems = allItems.filter(item => 
-        item.userId === user.uid || item.uid === user.uid
-      );
-
-      console.log('HomeScreen: Found', userItems.length, 'items for this user');
-      setPantryItems(userItems);
+      console.log('HomeScreen: Found', allItems.length, 'items in pantry (showing all)');
+      setPantryItems(allItems);
     });
 
     return () => unsubscribe();
