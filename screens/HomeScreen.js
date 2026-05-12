@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Modal, Dimensions, Image, StatusBar } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { loadItems, markAsUsed, deleteItem } from '../utils/storage';
+import { loadItems, markAsUsed, deleteItem } from '../utils/firestoreStorage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
