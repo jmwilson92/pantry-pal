@@ -8,10 +8,11 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { getGrokWeeklyPlan } from '../utils/grokService';
 import { useAuth } from '../context/AuthContext';
 import { addToGroceryList } from '../utils/groceryStorage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function WeeklyMealPlannerScreen() {
   const [weeklyPlan, setWeeklyPlan] = useState([]);
@@ -22,23 +23,52 @@ export default function WeeklyMealPlannerScreen() {
   const navigation = useNavigation();
   const { user } = useAuth();
 
-  useEffect(() => {
-    const loadPlan = async () => {
-      try {
-        const plan = await getGrokWeeklyPlan();
-        if (plan && plan.length > 0) {
-          setWeeklyPlan(plan);
-        } else {
+  // Load plan from AsyncStorage when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadSavedPlan = async () => {
+        try {
+          const savedPlan = await AsyncStorage.getItem('weeklyPlan');
+          const savedLocked = await AsyncStorage.getItem('lockedDays');
+          
+          if (savedPlan) {
+            setWeeklyPlan(JSON.parse(savedPlan));
+          } else {
+            // Only load from Grok if no saved plan
+            const plan = await getGrokWeeklyPlan();
+            if (plan && plan.length > 0) {
+              setWeeklyPlan(plan);
+              await AsyncStorage.setItem('weeklyPlan', JSON.stringify(plan));
+            } else {
+              setError("Failed to load meal plan");
+            }
+          }
+          
+          if (savedLocked) {
+            setLockedDays(JSON.parse(savedLocked));
+          }
+        } catch (err) {
+          console.error("Load plan error:", err);
           setError("Failed to load meal plan");
         }
-      } catch (err) {
-        console.error("Load plan error:", err);
-        setError("Failed to load meal plan");
+        setIsLoading(false);
+      };
+      loadSavedPlan();
+    }, [])
+  );
+
+  // Save plan and locked days whenever they change
+  useEffect(() => {
+    const savePlan = async () => {
+      if (weeklyPlan.length > 0) {
+        await AsyncStorage.setItem('weeklyPlan', JSON.stringify(weeklyPlan));
       }
-      setIsLoading(false);
+      if (lockedDays.length > 0) {
+        await AsyncStorage.setItem('lockedDays', JSON.stringify(lockedDays));
+      }
     };
-    loadPlan();
-  }, []);
+    savePlan();
+  }, [weeklyPlan, lockedDays]);
 
   const toggleLock = (day) => {
     if (lockedDays.includes(day)) {
@@ -91,7 +121,7 @@ export default function WeeklyMealPlannerScreen() {
       weeklyPlan.forEach(day => {
         ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
           const meal = day[mealType];
-          if (meal && meal.ingredients) {
+          if (meal && meal.ingredients && Array.isArray(meal.ingredients)) {
             meal.ingredients.forEach(ing => {
               allIngredients.push({
                 name: ing,
@@ -106,7 +136,7 @@ export default function WeeklyMealPlannerScreen() {
 
       await addToGroceryList(allIngredients);
       Alert.alert("Success", "All ingredients added to your Smart Grocery List!");
-      navigation.navigate('GroceryList');
+      navigation.navigate('SmartShoppingList');
     } catch (err) {
       console.error("Transfer error:", err);
       Alert.alert("Error", "Failed to transfer to grocery list");
@@ -126,16 +156,17 @@ export default function WeeklyMealPlannerScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Weekly Meal Planner</Text>
-        <TouchableOpacity 
-          style={styles.regenerateButton} 
-          onPress={handleRegenerate}
-          disabled={isRegenerating}
-        >
-          <Text style={styles.regenerateText}>
-            {isRegenerating ? "Regenerating..." : "🔄 Regenerate Plan"}
-          </Text>
-        </TouchableOpacity>
       </View>
+
+      <TouchableOpacity 
+        style={styles.regenerateButton} 
+        onPress={handleRegenerate}
+        disabled={isRegenerating}
+      >
+        <Text style={styles.regenerateText}>
+          {isRegenerating ? "Regenerating..." : "🔄 Regenerate Plan"}
+        </Text>
+      </TouchableOpacity>
 
       {error && <Text style={styles.errorText}>{error}</Text>}
 
@@ -202,7 +233,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f1e9', padding: 16 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   title: { fontSize: 24, fontWeight: 'bold', color: '#3f2a1d' },
-  regenerateButton: { backgroundColor: '#e67e22', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+  regenerateButton: { backgroundColor: '#e67e22', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, alignSelf: 'flex-end', marginBottom: 16 },
   regenerateText: { color: '#fff', fontWeight: '600' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: 12, color: '#7f6e5d' },
