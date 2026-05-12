@@ -16,11 +16,12 @@ export async function getGrokMealSuggestions() {
     'Roasting the vegetables...'
   ];
 
-  const prompt = `You are a creative chef. Generate 7 unique, delicious meal ideas with real appetizing names (not generic like 'Meal 1'). For each meal provide:
-- Creative name
-- Short tasty description (2-3 sentences)
-- ingredients: array of 4-6 strings WITH QUANTITIES (example: "1/2 pound chicken cutlets", "1 teaspoon lemon pepper", "2 tablespoons butter")
-- imagePrompt for Unsplash search
+  const prompt = `You are a creative chef. Generate 7 unique, delicious meal ideas with real appetizing names. 
+For each meal provide:
+- name: creative real name
+- description: 2-3 sentences
+- ingredients: array of strings WITH QUANTITIES (example: "1/2 pound chicken cutlets", "1 teaspoon lemon pepper", "2 tablespoons butter")
+- imagePrompt: short search term for food photo
 
 Return ONLY a valid JSON array of 7 objects. No extra text.`;
 
@@ -35,15 +36,16 @@ Return ONLY a valid JSON array of 7 objects. No extra text.`;
         model: "grok-3-latest",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.9,
-        max_tokens: 1500,
+        max_tokens: 2000,
       }),
     });
 
     const data = await response.json();
+    console.log("Grok Meal Suggestions raw response:", data);
 
     if (!data.choices || !data.choices[0]) {
-      console.error("Grok API returned no choices:", data);
-      return getMockMeals();
+      console.error("No choices in response");
+      return [];
     }
 
     const content = data.choices[0].message.content;
@@ -55,7 +57,7 @@ Return ONLY a valid JSON array of 7 objects. No extra text.`;
     }));
   } catch (error) {
     console.error('Grok API error:', error);
-    return getMockMeals();
+    return [];
   }
 }
 
@@ -73,15 +75,14 @@ export async function getGrokWeeklyPlan() {
     'Roasting the vegetables...'
   ];
 
-  const prompt = `You are a creative meal planner. Generate a full 7-day meal plan with breakfast, lunch, and dinner for each day. Make them creative and varied. For each meal provide name, short description, key nutrients/vitamins.
-
+  const prompt = `You are a creative meal planner. Generate a full 7-day meal plan.
 Return ONLY a valid JSON ARRAY (not an object) in this exact format:
 [
   {"day": "Monday", "breakfast": {"name": "...", "description": "...", "key_nutrients": ["..."]}, "lunch": {...}, "dinner": {...}},
   {"day": "Tuesday", "breakfast": {...}, "lunch": {...}, "dinner": {...}},
   ... for all 7 days
 ]
-Make every meal different and creative. Include quantities in descriptions if possible.`;
+Make every meal different and creative.`;
 
   try {
     const response = await fetch(GROK_API_URL, {
@@ -94,34 +95,39 @@ Make every meal different and creative. Include quantities in descriptions if po
         model: "grok-3-latest",
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.85,
-        max_tokens: 2000,
+        max_tokens: 2500,
       }),
     });
 
     const data = await response.json();
+    console.log("Grok Weekly Plan raw response:", data);
 
     if (!data.choices || !data.choices[0]) {
-      console.error("Grok weekly plan API error:", data);
-      return getMockWeeklyPlan();
+      console.error("No choices in weekly plan response");
+      return [];
     }
 
     const content = data.choices[0].message.content;
-    const plan = JSON.parse(content.replace(/```json|```/g, '').trim());
+    let plan = JSON.parse(content.replace(/```json|```/g, '').trim());
 
-    if (Array.isArray(plan)) {
-      return plan;
-    } else {
-      console.error("Weekly plan is not an array:", plan);
-      return getMockWeeklyPlan();
+    if (!Array.isArray(plan)) {
+      console.log("Weekly plan was an object, converting to array...");
+      plan = Object.keys(plan).map(day => ({
+        day,
+        ...plan[day]
+      }));
     }
+
+    return plan;
   } catch (error) {
     console.error('Grok weekly plan error:', error);
-    return getMockWeeklyPlan();
+    return [];
   }
 }
 
 export async function getCookingInstructions(mealName, ingredients) {
-  const prompt = `You are a helpful chef. Give clear step-by-step cooking instructions for ${mealName} using these ingredients: ${ingredients.join(', ')}. Include prep time and tips. Keep under 300 words. Do not say "I'm assuming" or use placeholders. Start directly with the instructions. Use bullet points for tips, no dashes or asterisks.`;
+  const prompt = `Give clear step-by-step cooking instructions for ${mealName} using these ingredients: ${ingredients.join(', ')}. 
+Start directly with the steps. No intro paragraph. Use numbered steps. Keep under 300 words.`;
 
   try {
     const response = await fetch(GROK_API_URL, {
@@ -139,37 +145,11 @@ export async function getCookingInstructions(mealName, ingredients) {
     });
 
     const data = await response.json();
-
     if (!data.choices || !data.choices[0]) {
-      return 'Sorry, could not generate instructions right now. Try again later.';
+      return 'Sorry, could not generate instructions right now.';
     }
-
     return data.choices[0].message.content;
   } catch (error) {
-    return 'Sorry, could not generate instructions right now. Try again later.';
+    return 'Sorry, could not generate instructions right now.';
   }
-}
-
-function getMockMeals() {
-  return [
-    { id: 1, name: 'Creamy Avocado Pasta', description: 'Fresh avocado blended with garlic and lemon for a creamy sauce.', image: 'https://picsum.photos/id/1080/300/200', ingredients: ['1/2 avocado', '200g pasta', '2 cloves garlic', '1 lemon'] },
-    { id: 2, name: 'Spicy Chickpea Stir Fry', description: 'Crispy chickpeas tossed with colorful veggies and a kick of chili.', image: 'https://picsum.photos/id/106/300/200', ingredients: ['1 can chickpeas', '1 bell pepper', '1 onion', '1 tsp chili'] },
-    { id: 3, name: 'Lemon Herb Chicken Bowl', description: 'Juicy grilled chicken with roasted vegetables and quinoa.', image: 'https://picsum.photos/id/292/300/200', ingredients: ['200g chicken', '1 lemon', 'mixed herbs', '1 cup quinoa'] },
-    { id: 4, name: 'Mushroom Risotto', description: 'Creamy arborio rice with wild mushrooms and parmesan.', image: 'https://picsum.photos/id/312/300/200', ingredients: ['200g mushrooms', '1 cup arborio rice', '50g parmesan', '2 cloves garlic'] },
-    { id: 5, name: 'Thai Basil Beef', description: 'Spicy stir-fried beef with fragrant basil and bell peppers.', image: 'https://picsum.photos/id/431/300/200', ingredients: ['200g beef', '1 bunch basil', '1 chili', '1 bell pepper'] },
-    { id: 6, name: 'Caprese Stuffed Chicken', description: 'Chicken breast stuffed with mozzarella, tomato, and fresh basil.', image: 'https://picsum.photos/id/1080/300/200', ingredients: ['1 chicken breast', '50g mozzarella', '1 tomato', 'fresh basil'] },
-    { id: 7, name: 'Sweet Potato Black Bean Tacos', description: 'Roasted sweet potato and black beans in warm corn tortillas.', image: 'https://picsum.photos/id/106/300/200', ingredients: ['1 sweet potato', '1 can black beans', '4 corn tortillas', '1 avocado'] },
-  ];
-}
-
-function getMockWeeklyPlan() {
-  return [
-    { day: 'Monday', breakfast: { name: 'Avocado Toast', description: 'Creamy avocado on toasted sourdough with chili flakes', nutrients: 'Healthy fats, Vitamin E, Fiber' }, lunch: { name: 'Quinoa Veggie Bowl', description: 'Fresh mixed veggies with quinoa and tahini dressing', nutrients: 'Complete protein, Fiber, Iron' }, dinner: { name: 'Grilled Salmon with Asparagus', description: 'Lemon herb salmon fillet with roasted asparagus', nutrients: 'Omega-3, Protein, Vitamin D' } },
-    { day: 'Tuesday', breakfast: { name: 'Berry Yogurt Parfait', description: 'Greek yogurt layered with fresh berries and granola', nutrients: 'Probiotics, Antioxidants, Calcium' }, lunch: { name: 'Chickpea Salad Wrap', description: 'Spiced chickpeas in a whole wheat wrap with veggies', nutrients: 'Plant protein, Fiber, Folate' }, dinner: { name: 'Mushroom Risotto', description: 'Creamy arborio rice with wild mushrooms and parmesan', nutrients: 'B vitamins, Fiber, Antioxidants' } },
-    { day: 'Wednesday', breakfast: { name: 'Scrambled Eggs with Spinach', description: 'Fluffy eggs with fresh spinach and feta cheese', nutrients: 'Protein', 'Iron', 'Vitamin A' }, lunch: { name: 'Lentil Soup with Bread', description: 'Hearty lentil soup with crusty whole grain bread', nutrients: 'Plant protein', 'Fiber', 'Iron' }, dinner: { name: 'Beef Stir Fry', description: 'Tender beef with broccoli and garlic sauce over rice', nutrients: 'Protein', 'Vitamin C', 'Iron' } },
-    { day: 'Thursday', breakfast: { name: 'Banana Oat Pancakes', description: 'Fluffy pancakes made with banana and oats', nutrients: 'Potassium', 'Fiber', 'B vitamins' }, lunch: { name: 'Caprese Salad', description: 'Fresh mozzarella, tomatoes, and basil with balsamic', nutrients: 'Calcium', 'Lycopene', 'Healthy fats' }, dinner: { name: 'Baked Cod with Sweet Potato', description: 'Oven-baked cod with roasted sweet potato wedges', nutrients: 'Lean protein', 'Beta-carotene', 'Omega-3' } },
-    { day: 'Friday', breakfast: { name: 'Chia Pudding with Mango', description: 'Overnight chia pudding topped with fresh mango', nutrients: 'Omega-3', 'Fiber', 'Vitamin C' }, lunch: { name: 'Turkey Avocado Sandwich', description: 'Sliced turkey with avocado on whole grain bread', nutrients: 'Lean protein', 'Healthy fats', 'Fiber' }, dinner: { name: 'Vegetable Curry', description: 'Mixed vegetables in fragrant coconut curry sauce', nutrients: 'Fiber', 'Vitamins', 'Antioxidants' } },
-    { day: 'Saturday', breakfast: { name: 'Smoked Salmon Bagel', description: 'Toasted bagel with cream cheese and smoked salmon', nutrients: 'Omega-3', 'Protein', 'Calcium' }, lunch: { name: 'Greek Salad with Chicken', description: 'Grilled chicken over crisp salad with feta and olives', nutrients: 'Protein', 'Healthy fats', 'Vitamins' }, dinner: { name: 'Pork Tenderloin with Apples', description: 'Roasted pork with caramelized apples and sage', nutrients: 'Protein', 'Fiber', 'Iron' } },
-    { day: 'Sunday', breakfast: { name: 'Veggie Omelette', description: 'Fluffy omelette loaded with peppers, onions, and cheese', nutrients: 'Protein', 'Vitamins', 'Calcium' }, lunch: { name: 'Falafel Bowl', description: 'Crispy falafel with hummus, veggies, and tahini', nutrients: 'Plant protein', 'Fiber', 'Iron' }, dinner: { name: 'Shrimp Tacos', description: 'Grilled shrimp in corn tortillas with slaw and lime', nutrients: 'Lean protein', 'Vitamin C', 'Omega-3' } },
-  ];
 }
