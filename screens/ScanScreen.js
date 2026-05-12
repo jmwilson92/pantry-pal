@@ -21,7 +21,6 @@ export default function ScanScreen({ navigation }) {
   const scanLineAnim = useRef(new Animated.Value(0)).current;
   const confettiAnims = useRef([]).current;
 
-  // Animated scanning line (fixed - using translateY)
   useEffect(() => {
     if (!scanned) {
       Animated.loop(
@@ -45,7 +44,16 @@ export default function ScanScreen({ navigation }) {
   const lookupProduct = async (barcode) => {
     try {
       const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
+      
+      // Check if response is actually JSON
+      const contentType = response.headers.get('content-type');
+      if (!response.ok || !contentType || !contentType.includes('application/json')) {
+        console.log('API returned non-JSON or error:', response.status);
+        return { name: `Product ${barcode.slice(-6)}`, brand: '', image: null };
+      }
+
       const data = await response.json();
+
       if (data.status === 1 && data.product) {
         return {
           name: data.product.product_name || `Product ${barcode.slice(-6)}`,
@@ -54,7 +62,7 @@ export default function ScanScreen({ navigation }) {
         };
       }
     } catch (e) {
-      console.log('API error:', e);
+      console.log('API error (handled gracefully):', e.message);
     }
     return { name: `Product ${barcode.slice(-6)}`, brand: '', image: null };
   };
@@ -131,7 +139,6 @@ export default function ScanScreen({ navigation }) {
     setScanned(false);
     setScannedItem(null);
 
-    // Trigger the fun food emoji animation
     triggerFoodConfetti();
 
     setTimeout(() => {
@@ -202,7 +209,6 @@ export default function ScanScreen({ navigation }) {
         </TouchableOpacity>
       )}
 
-      {/* Add Modal */}
       <Modal visible={showAddModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -239,7 +245,6 @@ export default function ScanScreen({ navigation }) {
         </View>
       </Modal>
 
-      {/* Food Emoji Confetti */}
       {showConfetti && (
         <View style={styles.confettiContainer} pointerEvents="none">
           {confettiAnims.map((anim, index) => (
