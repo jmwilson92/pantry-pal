@@ -1,8 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Animated, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Animated, Modal, TextInput, Dimensions } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { saveItem } from '../utils/storage';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const FOOD_EMOJIS = ['🍎', '🥑', '🥦', '🍞', '🥓', '🍒', '🥬', '🍌', '🥜', '🍪'];
 
 export default function ScanScreen({ navigation }) {
   const [permission, requestPermission] = useCameraPermissions();
@@ -12,22 +16,24 @@ export default function ScanScreen({ navigation }) {
   const [expiryDate, setExpiryDate] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [itemName, setItemName] = useState('');
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const scanLineAnim = useRef(new Animated.Value(0)).current;
+  const confettiAnims = useRef([]).current;
 
-  // Animated scanning line
+  // Animated scanning line (fixed - using translateY)
   useEffect(() => {
     if (!scanned) {
       Animated.loop(
         Animated.sequence([
           Animated.timing(scanLineAnim, {
             toValue: 1,
-            duration: 1800,
+            duration: 1600,
             useNativeDriver: true,
           }),
           Animated.timing(scanLineAnim, {
             toValue: 0,
-            duration: 1800,
+            duration: 1600,
             useNativeDriver: true,
           }),
         ])
@@ -70,6 +76,46 @@ export default function ScanScreen({ navigation }) {
     setShowAddModal(true);
   };
 
+  const triggerFoodConfetti = () => {
+    setShowConfetti(true);
+    confettiAnims.length = 0;
+
+    for (let i = 0; i < 12; i++) {
+      const anim = {
+        translateY: new Animated.Value(SCREEN_HEIGHT * 0.6),
+        translateX: new Animated.Value(Math.random() * SCREEN_WIDTH - 50),
+        rotate: new Animated.Value(0),
+        opacity: new Animated.Value(1),
+        emoji: FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)],
+      };
+      confettiAnims.push(anim);
+
+      Animated.parallel([
+        Animated.timing(anim.translateY, {
+          toValue: -100,
+          duration: 1400 + Math.random() * 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(anim.rotate, {
+          toValue: Math.random() > 0.5 ? 1 : -1,
+          duration: 1600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(anim.opacity, {
+          toValue: 0,
+          duration: 1600,
+          delay: 600,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+
+    setTimeout(() => {
+      setShowConfetti(false);
+      confettiAnims.length = 0;
+    }, 2200);
+  };
+
   const handleAddToPantry = async () => {
     if (!scannedItem) return;
 
@@ -85,25 +131,24 @@ export default function ScanScreen({ navigation }) {
     setScanned(false);
     setScannedItem(null);
 
-    Alert.alert('Success!', `${itemName} added to your pantry!`, [
-      { text: 'Scan Another', onPress: () => setScanned(false) },
-      { text: 'Done', onPress: () => navigation.goBack() },
-    ]);
+    // Trigger the fun food emoji animation
+    triggerFoodConfetti();
+
+    setTimeout(() => {
+      Alert.alert('Added! 🎉', `${itemName} is now in your pantry!`, [
+        { text: 'Scan More', onPress: () => setScanned(false) },
+        { text: 'Done', onPress: () => navigation.goBack() },
+      ]);
+    }, 800);
   };
 
   const onDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
-    if (selectedDate) {
-      setExpiryDate(selectedDate);
-    }
+    if (selectedDate) setExpiryDate(selectedDate);
   };
 
   if (!permission) {
-    return (
-      <View style={styles.container}>
-        <Text>Requesting camera permission...</Text>
-      </View>
-    );
+    return <View style={styles.container}><Text>Requesting camera permission...</Text></View>;
   }
 
   if (!permission.granted) {
@@ -131,19 +176,19 @@ export default function ScanScreen({ navigation }) {
         }}
       />
 
-      {/* Overlay outside CameraView to avoid children warning */}
       <View style={styles.overlay} pointerEvents="box-none">
         <View style={styles.scanFrame} />
         
-        {/* Animated scanning line */}
         <Animated.View
           style={[
             styles.scanLine,
             {
-              top: scanLineAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [80, 280],
-              }),
+              transform: [{
+                translateY: scanLineAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [80, 280],
+                }),
+              }],
             },
           ]}
         />
@@ -157,7 +202,7 @@ export default function ScanScreen({ navigation }) {
         </TouchableOpacity>
       )}
 
-      {/* Add to Pantry Modal */}
+      {/* Add Modal */}
       <Modal visible={showAddModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -170,9 +215,7 @@ export default function ScanScreen({ navigation }) {
               placeholder="Item name"
             />
 
-            {scannedItem?.brand ? (
-              <Text style={styles.brandText}>Brand: {scannedItem.brand}</Text>
-            ) : null}
+            {scannedItem?.brand ? <Text style={styles.brandText}>Brand: {scannedItem.brand}</Text> : null}
 
             <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
               <Text style={styles.dateButtonText}>
@@ -181,12 +224,7 @@ export default function ScanScreen({ navigation }) {
             </TouchableOpacity>
 
             {showDatePicker && (
-              <DateTimePicker
-                value={expiryDate || new Date()}
-                mode="date"
-                display="default"
-                onChange={onDateChange}
-              />
+              <DateTimePicker value={expiryDate || new Date()} mode="date" display="default" onChange={onDateChange} />
             )}
 
             <View style={styles.modalButtons}>
@@ -200,6 +238,29 @@ export default function ScanScreen({ navigation }) {
           </View>
         </View>
       </Modal>
+
+      {/* Food Emoji Confetti */}
+      {showConfetti && (
+        <View style={styles.confettiContainer} pointerEvents="none">
+          {confettiAnims.map((anim, index) => (
+            <Animated.Text
+              key={index}
+              style={{
+                position: 'absolute',
+                fontSize: 32,
+                transform: [
+                  { translateX: anim.translateX },
+                  { translateY: anim.translateY },
+                  { rotate: anim.rotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) },
+                ],
+                opacity: anim.opacity,
+              }}
+            >
+              {anim.emoji}
+            </Animated.Text>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -209,7 +270,7 @@ const styles = StyleSheet.create({
   camera: { flex: 1 },
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' },
   scanFrame: { width: 280, height: 200, borderWidth: 3, borderColor: '#22c55e', borderRadius: 12 },
-  scanLine: { position: 'absolute', width: 260, height: 4, backgroundColor: '#ef4444', borderRadius: 2 },
+  scanLine: { position: 'absolute', width: 260, height: 5, backgroundColor: '#ef4444', borderRadius: 3 },
   instruction: { position: 'absolute', bottom: 80, color: '#fff', fontSize: 16, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 10 },
   backButton: { position: 'absolute', top: 60, left: 20, zIndex: 30, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20 },
   backButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
@@ -230,4 +291,5 @@ const styles = StyleSheet.create({
   cancelText: { color: '#333', fontWeight: '600' },
   addButton: { flex: 1, padding: 14, alignItems: 'center', marginLeft: 8, borderRadius: 10, backgroundColor: '#22c55e' },
   addText: { color: '#fff', fontWeight: '700' },
+  confettiContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100 },
 });
