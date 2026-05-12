@@ -165,12 +165,20 @@ export default function HomeScreen({ navigation }) {
       <StatusBar barStyle="dark-content" backgroundColor="#f8f1e9" />
       <View style={styles.header}>
         <Text style={styles.title}>Pantry Pal 🥦</Text>
-        <TouchableOpacity 
-          style={styles.scanButton}
-          onPress={() => navigation.navigate('Scan')}
-        >
-          <Text style={styles.scanButtonText}>🔍</Text>
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity 
+            style={styles.profileButton}
+            onPress={() => navigation.navigate('Profile')}
+          >
+            <Text style={styles.profileIcon}>👤</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.scanButton}
+            onPress={() => navigation.navigate('Scan')}
+          >
+            <Text style={styles.scanButtonText}>🔍</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <Text style={styles.stats}>You have {items.length} items • {filteredItems.length} shown</Text>
@@ -237,6 +245,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f1e9' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#3f2a1d' },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  profileButton: { padding: 8 },
+  profileIcon: { fontSize: 24 },
   scanButton: { backgroundColor: '#e8d9c2', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 },
   scanButtonText: { fontSize: 20 },
   stats: { paddingHorizontal: 20, color: '#6b5b4f', marginBottom: 12 },
