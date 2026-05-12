@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
   StyleSheet,
   Alert,
@@ -10,7 +9,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SwipeListView } from 'react-native-swipe-list-view';
-import { collection, onSnapshot, query, where, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 export default function HomeScreen() {
@@ -21,13 +20,22 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!user) return;
 
-    const q = query(collection(db, 'pantries'), where('userId', '==', user.uid));
+    console.log('HomeScreen: Current user UID:', user.uid);
+
+    const q = query(collection(db, 'pantries'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const items = snapshot.docs.map(doc => ({
+      const allItems = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
-      setPantryItems(items);
+
+      // Filter for this user's items (handles both userId and uid field names)
+      const userItems = allItems.filter(item => 
+        item.userId === user.uid || item.uid === user.uid
+      );
+
+      console.log('HomeScreen: Found', userItems.length, 'items for this user');
+      setPantryItems(userItems);
     });
 
     return () => unsubscribe();
@@ -36,21 +44,24 @@ export default function HomeScreen() {
   const handleDelete = async (item) => {
     try {
       await deleteDoc(doc(db, 'pantries', item.id));
+      Alert.alert('Deleted', 'Item removed from pantry');
     } catch (error) {
+      console.error('Delete error:', error);
       Alert.alert('Error', 'Failed to delete item');
     }
   };
 
   const handleMarkUsed = async (item) => {
     try {
-      if (item.quantity > 1) {
+      if ((item.quantity || 1) > 1) {
         await updateDoc(doc(db, 'pantries', item.id), {
-          quantity: item.quantity - 1
+          quantity: (item.quantity || 1) - 1
         });
       } else {
         await deleteDoc(doc(db, 'pantries', item.id));
       }
     } catch (error) {
+      console.error('Mark used error:', error);
       Alert.alert('Error', 'Failed to update item');
     }
   };
@@ -64,7 +75,7 @@ export default function HomeScreen() {
         <View style={styles.itemText}>
           <Text style={styles.itemName}>{item.name}</Text>
           <Text style={styles.itemDetails}>
-            {item.quantity || 1} { (item.quantity || 1) > 1 ? 'items' : 'item' }
+            {item.quantity || 1} {(item.quantity || 1) > 1 ? 'items' : 'item'}
             {item.expirationDate && ` • Expires ${new Date(item.expirationDate).toLocaleDateString()}`}
           </Text>
         </View>
