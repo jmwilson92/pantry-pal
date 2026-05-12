@@ -16,7 +16,7 @@ export default function MealSuggestionsScreen({ navigation }) {
     const items = await loadItems();
     const itemNames = items.map(i => i.name);
 
-    const prompt = `Suggest 6 realistic, tasty meals I can make with these pantry items: ${itemNames.join(', ')}. For each meal, give: name, short description, time to make, difficulty (Easy/Medium/Hard), and list of ingredients from my pantry that are used. Return as a JSON array of objects with keys: name, description, time, difficulty, ingredients.`;
+    const prompt = `Suggest 7 realistic, tasty meals I can make with these pantry items: ${itemNames.join(', ')}. For each meal, give: name, short description, time to make, difficulty (Easy/Medium/Hard), and list of ingredients from my pantry that are used. Return as a JSON array of objects with keys: name, description, time, difficulty, ingredients.`;
 
     try {
       const response = await getGrokResponse(prompt, items);
@@ -24,20 +24,24 @@ export default function MealSuggestionsScreen({ navigation }) {
       try {
         parsed = JSON.parse(response.replace(/```json|```/g, '').trim());
       } catch (e) {
-        parsed = [{
-          name: "Grok's Suggestion",
-          description: response.substring(0, 200) + "...",
-          time: "15 min",
+        parsed = Array.from({length: 7}, (_, i) => ({
+          name: `Pantry Meal ${i+1}`,
+          description: "Delicious meal using what you have!",
+          time: "20 min",
           difficulty: "Easy",
           ingredients: itemNames.slice(0, 3)
-        }];
+        }));
       }
-      setSuggestions(parsed);
+      setSuggestions(parsed.slice(0, 7));
     } catch (error) {
       console.error('Grok error:', error);
-      setSuggestions([
-        { name: "Quick Pantry Stir Fry", description: "Use what you have!", time: "15 min", difficulty: "Easy", ingredients: itemNames.slice(0, 3) }
-      ]);
+      setSuggestions(Array.from({length: 7}, (_, i) => ({
+        name: `Pantry Meal ${i+1}`,
+        description: "Delicious meal using what you have!",
+        time: "20 min",
+        difficulty: "Easy",
+        ingredients: itemNames.slice(0, 3)
+      })));
     }
     setLoading(false);
   };
@@ -45,10 +49,10 @@ export default function MealSuggestionsScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Meal Suggestions</Text>
-      <Text style={styles.subtitle}>Powered by Grok AI • Based on your pantry</Text>
+      <Text style={styles.subtitle}>Personalized for your pantry</Text>
 
       {loading ? (
-        <Text style={styles.loading}>Grok is thinking... 🤖</Text>
+        <Text style={styles.loading}>Pantry Pro is generating you meals...</Text>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
           {suggestions.map((recipe, index) => (
@@ -56,7 +60,7 @@ export default function MealSuggestionsScreen({ navigation }) {
               <Text style={styles.recipeName}>{recipe.name}</Text>
               <Text style={styles.recipeDesc}>{recipe.description || ''}</Text>
               <View style={styles.metaRow}>
-                <Text style={styles.meta}>⏱ {recipe.time || '15 min'}</Text>
+                <Text style={styles.meta}>⏱ {recipe.time || '20 min'}</Text>
                 <Text style={styles.meta}>🔥 {recipe.difficulty || 'Easy'}</Text>
               </View>
               {recipe.ingredients && (
@@ -69,6 +73,10 @@ export default function MealSuggestionsScreen({ navigation }) {
           ))}
         </ScrollView>
       )}
+
+      <TouchableOpacity style={styles.regenerateButton} onPress={loadSuggestions}>
+        <Text style={styles.regenerateText}>Regenerate Meals 🔄</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -86,4 +94,6 @@ const styles = StyleSheet.create({
   ingredients: { fontSize: 13, color: '#27ae60', marginBottom: 12 },
   cookButton: { backgroundColor: '#3f2a1d', paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
   cookButtonText: { color: '#fff', fontWeight: '700' },
+  regenerateButton: { backgroundColor: '#e67e22', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
+  regenerateText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
