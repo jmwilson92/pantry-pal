@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -10,16 +10,32 @@ import HomeScreen from './screens/HomeScreen';
 import ScanScreen from './screens/ScanScreen';
 import InventoryScreen from './screens/InventoryScreen';
 import AddItemScreen from './screens/AddItemScreen';
+import { registerForPushNotifications, scheduleExpiringNotifications } from './utils/notifications';
+import { loadItems } from './utils/firestoreStorage';
 
 const Stack = createNativeStackNavigator();
 
 function AppNavigator() {
   const { currentUser } = useAuth();
 
+  useEffect(() => {
+    if (currentUser) {
+      // Register for push notifications
+      registerForPushNotifications();
+
+      // Check for expiring items and schedule notifications
+      const checkExpiring = async () => {
+        const items = await loadItems();
+        await scheduleExpiringNotifications(items);
+      };
+
+      checkExpiring();
+    }
+  }, [currentUser]);
+
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {currentUser ? (
-        // Logged in screens
         <>
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="Scan" component={ScanScreen} options={{ headerShown: true, title: 'Scan Barcode' }} />
@@ -27,7 +43,6 @@ function AppNavigator() {
           <Stack.Screen name="Inventory" component={InventoryScreen} options={{ headerShown: true, title: 'My Inventory' }} />
         </>
       ) : (
-        // Auth screens
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="SignUp" component={SignUpScreen} />
