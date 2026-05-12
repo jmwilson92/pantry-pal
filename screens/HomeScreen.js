@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Modal, Dimensions, Image, Animated, TouchableWithoutFeedback, StatusBar } from 'react-native';
-import { loadItems } from '../utils/storage';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Modal, Dimensions, Image, Animated, TouchableWithoutFeedback, StatusBar, Alert } from 'react-native';
+import { loadItems, markAsUsed, deleteItem } from '../utils/storage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Separate Animated Tile Component
-const AnimatedTile = ({ item, urgency, getDaysLeftText, getPlaceholderImage }) => {
+const AnimatedTile = ({ item, urgency, getDaysLeftText, getPlaceholderImage, onLongPress }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const onPressIn = () => {
@@ -25,24 +25,35 @@ const AnimatedTile = ({ item, urgency, getDaysLeftText, getPlaceholderImage }) =
   };
 
   return (
-    <Animated.View style={[styles.itemCard, { 
-      shadowColor: urgency,
-      transform: [{ scale: scaleAnim }] 
-    }]}>
-      <TouchableWithoutFeedback onPressIn={onPressIn} onPressOut={onPressOut}>
+    <TouchableWithoutFeedback 
+      onPressIn={onPressIn} 
+      onPressOut={onPressOut}
+      onLongPress={onLongPress}
+    >
+      <Animated.View style={[styles.itemCard, { 
+        shadowColor: urgency,
+        transform: [{ scale: scaleAnim }] 
+      }]}>
         <View style={styles.roundedWrapper}>
           <Image 
             source={{ uri: getPlaceholderImage() }} 
             style={styles.foodImage} 
           />
           <View style={styles.infoOverlay}>
-            <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+            <View style={styles.nameRow}>
+              <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+              {(item.quantity || 1) > 1 && (
+                <View style={styles.quantityBadge}>
+                  <Text style={styles.quantityText}>x{item.quantity}</Text>
+                </View>
+              )}
+            </View>
             <Text style={styles.itemDays}>{getDaysLeftText(item)}</Text>
             <Text style={styles.itemExpiry}>Expiry: {item.expiry || 'No date'}</Text>
           </View>
         </View>
-      </TouchableWithoutFeedback>
-    </Animated.View>
+      </Animated.View>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -84,8 +95,8 @@ export default function HomeScreen({ navigation }) {
 
     if (sortMode === 'expiry') {
       result.sort((a, b) => {
-        if (a.expiry === 'NA') return 1;
-        if (b.expiry === 'NA') return -1;
+        if (!a.expiry || a.expiry === 'NA') return 1;
+        if (!b.expiry || b.expiry === 'NA') return -1;
         return new Date(a.expiry) - new Date(b.expiry);
       });
     } else if (sortMode === 'name') {
@@ -131,23 +142,48 @@ export default function HomeScreen({ navigation }) {
 
   const getPlaceholderImage = () => 'https://cdn-icons-png.flaticon.com/512/3081/3081559.png';
 
+  const handleLongPress = (item) => {
+    Alert.alert(
+      item.name,
+      `Quantity: ${item.quantity || 1}`,
+      [
+        {
+          text: 'Mark as Used',
+          onPress: async () => {
+            await markAsUsed(item.id);
+            loadData();
+          },
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteItem(item.id);
+            loadData();
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8f1e9" />
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Pantry Pal 🥬</Text>
+        <Text style={styles.title}>Pantry Pal 🥦</Text>
         <TouchableOpacity 
           style={styles.scanButton}
           onPress={() => navigation.navigate('Scan')}
         >
-          <Text style={styles.scanButtonText}>𝄃𝄃𝄂𝄂𝄀𝄁𝄃𝄂𝄂𝄃</Text>
+          <Text style={styles.scanButtonText}>🔍</Text>
         </TouchableOpacity>
       </View>
 
       <Text style={styles.stats}>You have {items.length} items • {filteredItems.length} shown</Text>
 
-      {/* Single Filter Button */}
+      {/* Filter Button */}
       <View style={styles.filterRow}>
         <TouchableOpacity 
           style={styles.filterButton}
@@ -157,27 +193,34 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Full Width Single Column Grid */}
       <ScrollView 
         contentContainerStyle={styles.gridContainer}
         showsVerticalScrollIndicator={false}
-        showsHorizontalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {filteredItems.map((item, index) => {
-          const urgency = getUrgencyColor(item);
-          return (
-            <AnimatedTile 
-              key={item.id}
-              item={item}
-              urgency={urgency}
-              getDaysLeftText={getDaysLeftText}
-              getPlaceholderImage={getPlaceholderImage}
-            />
-          );
-        })}
+        {filteredItems.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>Your pantry is empty</Text>
+            <Text style={styles.emptySubtext}>Scan items to get started!</Text>
+          </View>
+        ) : (
+          filteredItems.map((item) => {
+            const urgency = getUrgencyColor(item);
+            return (
+              <AnimatedTile 
+                key={item.id}
+                item={item}
+                urgency={urgency}
+                getDaysLeftText={getDaysLeftText}
+                getPlaceholderImage={getPlaceholderImage}
+                onLongPress={() => handleLongPress(item)}
+              />
+            );
+          })
+        )}
       </ScrollView>
 
-      {/* Combined Filter Modal */}
+      {/* Filter Modal */}
       <Modal visible={showFilterModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -216,8 +259,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f1e9' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#3f2a1d' },
-  scanButton: { backgroundColor: '#e8d9c2', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20 },
-  scanButtonText: { fontSize: 22 },
+  scanButton: { backgroundColor: '#e8d9c2', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 },
+  scanButtonText: { fontSize: 20 },
   stats: { paddingHorizontal: 20, color: '#6b5b4f', marginBottom: 12 },
   filterRow: { paddingHorizontal: 16, marginBottom: 12 },
   filterButton: { backgroundColor: '#e8d9c2', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, alignSelf: 'flex-start' },
@@ -256,9 +299,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(63, 42, 29, 0.85)',
     paddingVertical: 10,
     paddingHorizontal: 12,
-    alignItems: 'center',
   },
-  itemName: { fontSize: 15, fontWeight: '700', color: '#fff', textAlign: 'center' },
+  nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  itemName: { fontSize: 15, fontWeight: '700', color: '#fff', flex: 1 },
+  quantityBadge: { 
+    backgroundColor: '#22c55e',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginLeft: 8,
+  },
+  quantityText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   itemDays: { fontSize: 13, fontWeight: '800', color: '#4ade80' },
   itemExpiry: { fontSize: 12, color: '#d1c5b5', marginTop: 2 },
   emptyState: { alignItems: 'center', paddingTop: 80 },
