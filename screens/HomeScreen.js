@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Modal, Dimensions, Image, Animated, StatusBar, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Modal, Dimensions, Image, StatusBar } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { loadItems, markAsUsed, deleteItem } from '../utils/storage';
 
@@ -124,7 +124,6 @@ export default function HomeScreen({ navigation }) {
 
   const renderItem = (item) => {
     const urgency = getUrgencyColor(item);
-    const scaleAnim = useRef(new Animated.Value(1)).current;
 
     return (
       <Swipeable
@@ -134,7 +133,7 @@ export default function HomeScreen({ navigation }) {
         overshootLeft={false}
         overshootRight={false}
       >
-        <Animated.View style={[styles.itemCard, { shadowColor: urgency }]}>
+        <View style={[styles.itemCard, { shadowColor: urgency }]}>
           <View style={styles.roundedWrapper}>
             <Image 
               source={{ uri: getPlaceholderImage() }} 
@@ -153,7 +152,7 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.itemExpiry}>Expiry: {item.expiry || 'No date'}</Text>
             </View>
           </View>
-        </Animated.View>
+        </View>
       </Swipeable>
     );
   };
