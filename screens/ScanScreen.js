@@ -2,13 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Animated, Modal, TextInput, Dimensions } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { saveItem } from '../utils/storage';
+import { saveItem } from '../utils/firestoreStorage';
+import { useAuth } from '../context/AuthContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const FOOD_EMOJIS = ['🍎', '🥑', '🥦', '🍞', '🥓', '🍒', '🥬', '🍌', '🥜', '🍪'];
 
 export default function ScanScreen({ navigation }) {
+  const { currentUser } = useAuth();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -20,7 +22,7 @@ export default function ScanScreen({ navigation }) {
 
   const scanLineAnim = useRef(new Animated.Value(0)).current;
   const confettiAnims = useRef([]).current;
-  const productCache = useRef(new Map()).current; // Simple cache for API results
+  const productCache = useRef(new Map()).current;
 
   useEffect(() => {
     if (!scanned) {
@@ -43,17 +45,15 @@ export default function ScanScreen({ navigation }) {
   }, [scanned]);
 
   const lookupProduct = async (barcode) => {
-    // Return cached result if we have it
     if (productCache.has(barcode)) {
       return productCache.get(barcode);
     }
 
     try {
       const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
-      
       const contentType = response.headers.get('content-type');
+      
       if (!response.ok || !contentType || !contentType.includes('application/json')) {
-        // 429 = rate limit, just use fallback silently
         if (response.status === 429) {
           console.log('Open Food Facts rate limit hit - using fallback name');
         }
@@ -88,85 +88,11 @@ export default function ScanScreen({ navigation }) {
 
     const product = await lookupProduct(data);
 
-    setScannedItem({
-      barcode: data,
+    navigation.navigate('AddItem', {
       name: product.name,
+      barcode: data,
       brand: product.brand,
-      image: product.image,
     });
-    setItemName(product.name);
-    setExpiryDate(null);
-    setShowAddModal(true);
-  };
-
-  const triggerFoodConfetti = () => {
-    setShowConfetti(true);
-    confettiAnims.length = 0;
-
-    for (let i = 0; i < 12; i++) {
-      const anim = {
-        translateY: new Animated.Value(SCREEN_HEIGHT * 0.6),
-        translateX: new Animated.Value(Math.random() * SCREEN_WIDTH - 50),
-        rotate: new Animated.Value(0),
-        opacity: new Animated.Value(1),
-        emoji: FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)],
-      };
-      confettiAnims.push(anim);
-
-      Animated.parallel([
-        Animated.timing(anim.translateY, {
-          toValue: -100,
-          duration: 1400 + Math.random() * 600,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim.rotate, {
-          toValue: Math.random() > 0.5 ? 1 : -1,
-          duration: 1600,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim.opacity, {
-          toValue: 0,
-          duration: 1600,
-          delay: 600,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-
-    setTimeout(() => {
-      setShowConfetti(false);
-      confettiAnims.length = 0;
-    }, 2200);
-  };
-
-  const handleAddToPantry = async () => {
-    if (!scannedItem) return;
-
-    await saveItem({
-      name: itemName.trim() || scannedItem.name,
-      barcode: scannedItem.barcode,
-      expiry: expiryDate ? expiryDate.toISOString().split('T')[0] : null,
-      addedAt: new Date().toISOString(),
-      brand: scannedItem.brand,
-    });
-
-    setShowAddModal(false);
-    setScanned(false);
-    setScannedItem(null);
-
-    triggerFoodConfetti();
-
-    setTimeout(() => {
-      Alert.alert('Added! 🎉', `${itemName} is now in your pantry!`, [
-        { text: 'Scan More', onPress: () => setScanned(false) },
-        { text: 'Done', onPress: () => navigation.goBack() },
-      ]);
-    }, 800);
-  };
-
-  const onDateChange = (event, selectedDate) => {
-    setShowDatePicker(false);
-    if (selectedDate) setExpiryDate(selectedDate);
   };
 
   if (!permission) {
@@ -223,64 +149,6 @@ export default function ScanScreen({ navigation }) {
           <Text style={styles.scanAgainText}>Scan Again</Text>
         </TouchableOpacity>
       )}
-
-      <Modal visible={showAddModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add to Pantry</Text>
-
-            <TextInput
-              style={styles.input}
-              value={itemName}
-              onChangeText={setItemName}
-              placeholder="Item name"
-            />
-
-            {scannedItem?.brand ? <Text style={styles.brandText}>Brand: {scannedItem.brand}</Text> : null}
-
-            <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
-              <Text style={styles.dateButtonText}>
-                {expiryDate ? `Expires: ${expiryDate.toDateString()}` : 'Set Expiration Date (optional)'}
-              </Text>
-            </TouchableOpacity>
-
-            {showDatePicker && (
-              <DateTimePicker value={expiryDate || new Date()} mode="date" display="default" onChange={onDateChange} />
-            )}
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.cancelButton} onPress={() => { setShowAddModal(false); setScanned(false); }}>
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.addButton} onPress={handleAddToPantry}>
-                <Text style={styles.addText}>Add to Pantry</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {showConfetti && (
-        <View style={styles.confettiContainer} pointerEvents="none">
-          {confettiAnims.map((anim, index) => (
-            <Animated.Text
-              key={index}
-              style={{
-                position: 'absolute',
-                fontSize: 32,
-                transform: [
-                  { translateX: anim.translateX },
-                  { translateY: anim.translateY },
-                  { rotate: anim.rotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) },
-                ],
-                opacity: anim.opacity,
-              }}
-            >
-              {anim.emoji}
-            </Animated.Text>
-          ))}
-        </View>
-      )}
     </View>
   );
 }
@@ -299,17 +167,4 @@ const styles = StyleSheet.create({
   permissionText: { color: '#fff', fontSize: 18, marginBottom: 20, textAlign: 'center' },
   permissionButton: { backgroundColor: '#22c55e', paddingHorizontal: 30, paddingVertical: 14, borderRadius: 25 },
   permissionButtonText: { color: '#000', fontSize: 16, fontWeight: '700' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#fff', borderRadius: 20, padding: 24, width: '90%', maxWidth: 340 },
-  modalTitle: { fontSize: 22, fontWeight: '700', textAlign: 'center', marginBottom: 20 },
-  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 10, padding: 14, fontSize: 16, marginBottom: 16 },
-  brandText: { color: '#666', marginBottom: 12, fontSize: 14 },
-  dateButton: { backgroundColor: '#f0f0f0', padding: 14, borderRadius: 10, marginBottom: 20 },
-  dateButtonText: { textAlign: 'center', fontSize: 16, color: '#333' },
-  modalButtons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
-  cancelButton: { flex: 1, padding: 14, alignItems: 'center', marginRight: 8, borderRadius: 10, backgroundColor: '#eee' },
-  cancelText: { color: '#333', fontWeight: '600' },
-  addButton: { flex: 1, padding: 14, alignItems: 'center', marginLeft: 8, borderRadius: 10, backgroundColor: '#22c55e' },
-  addText: { color: '#fff', fontWeight: '700' },
-  confettiContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100 },
 });
