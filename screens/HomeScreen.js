@@ -167,6 +167,12 @@ export default function HomeScreen({ navigation }) {
         <Text style={styles.title}>Pantry Pal 🥦</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity 
+            style={styles.proButton}
+            onPress={() => navigation.navigate('MealSuggestions')}
+          >
+            <Text style={styles.proText}>Pro</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
             style={styles.profileButton}
             onPress={() => navigation.navigate('Profile')}
           >
@@ -246,6 +252,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#3f2a1d' },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  proButton: { backgroundColor: '#22c55e', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  proText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   profileButton: { padding: 8 },
   profileIcon: { fontSize: 24 },
   scanButton: { backgroundColor: '#e8d9c2', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 },
