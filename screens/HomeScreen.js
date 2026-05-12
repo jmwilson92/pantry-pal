@@ -89,14 +89,14 @@ export default function HomeScreen() {
   const renderHiddenItem = ({ item }) => (
     <View style={styles.rowBack}>
       <TouchableOpacity
-        style={[styles.backBtn, styles.deleteBtn]}
+        style={styles.backBtn}
         onPress={() => handleDelete(item)}
       >
         <Text style={styles.backText}>🗑️</Text>
         <Text style={styles.backText}>Compost</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.backBtn, styles.eatBtn]}
+        style={styles.backBtn}
         onPress={() => handleMarkUsed(item)}
       >
         <Text style={styles.backText}>🍽️</Text>
@@ -157,9 +157,7 @@ const styles = StyleSheet.create({
   quantityText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
   rowBack: { alignItems: 'center', flex: 1, flexDirection: 'row', justifyContent: 'space-between', paddingLeft: 15, marginHorizontal: 16, marginVertical: 6, borderRadius: 12 },
   backBtn: { alignItems: 'center', justifyContent: 'center', width: 75, height: '100%' },
-  eatBtn: { backgroundColor: '#27ae60', borderTopLeftRadius: 12, borderBottomLeftRadius: 12 },
-  deleteBtn: { backgroundColor: '#e74c3c', borderTopRightRadius: 12, borderBottomRightRadius: 12 },
-  backText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  backText: { color: '#000', fontSize: 12, fontWeight: '600' },
   fab: { position: 'absolute', bottom: 30, right: 30, width: 60, height: 60, borderRadius: 30, backgroundColor: '#e67e22', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 8 },
   fabText: { fontSize: 32, color: '#fff', fontWeight: 'bold' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
