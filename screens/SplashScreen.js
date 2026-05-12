@@ -1,65 +1,76 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const FOOD_EMOJIS = ['🍎', '🥑', '🥦', '🍞', '🥓', '🍒', '🥬'];
+const FOOD_EMOJIS = ['🍎', '🥑', '🥦', '🍞', '🥓', '🍒', '🥬', '🍌', '🥜', '🍪'];
 
 export default function SplashScreen({ onFinish }) {
+  const [emojis, setEmojis] = useState([]);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnims = useRef(FOOD_EMOJIS.map(() => new Animated.Value(0.3))).current;
-  const dotAnims = useRef([new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)]).current;
 
   useEffect(() => {
     // Fade in title
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 600,
+      duration: 500,
       useNativeDriver: true,
     }).start();
 
-    // Animate emojis popping in
-    const emojiAnimations = scaleAnims.map((anim, index) =>
+    // Create floating emojis
+    const floatingEmojis = [];
+    for (let i = 0; i < 18; i++) {
+      const anim = {
+        id: i,
+        emoji: FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)],
+        x: Math.random() * (SCREEN_WIDTH - 60),
+        y: Math.random() * (SCREEN_HEIGHT * 0.65),
+        scale: new Animated.Value(0.3),
+        opacity: new Animated.Value(0),
+      };
+      floatingEmojis.push(anim);
+    }
+    setEmojis(floatingEmojis);
+
+    // Animate each emoji appearing and disappearing
+    floatingEmojis.forEach((animData, index) => {
+      const delay = index * 80;
+
       Animated.sequence([
-        Animated.delay(index * 120),
-        Animated.spring(anim, {
-          toValue: 1,
-          friction: 3,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    Animated.parallel(emojiAnimations).start();
-
-    // Animated loading dots
-    const animateDots = () => {
-      dotAnims.forEach((anim, index) => {
-        Animated.sequence([
-          Animated.delay(index * 200),
-          Animated.timing(anim, {
+        Animated.delay(delay),
+        Animated.parallel([
+          Animated.timing(animData.opacity, {
             toValue: 1,
             duration: 400,
             useNativeDriver: true,
           }),
-          Animated.timing(anim, {
-            toValue: 0,
-            duration: 400,
+          Animated.spring(animData.scale, {
+            toValue: 1,
+            friction: 4,
+            tension: 50,
             useNativeDriver: true,
           }),
-        ]).start();
-      });
+        ]),
+        Animated.delay(600 + Math.random() * 400),
+        Animated.parallel([
+          Animated.timing(animData.opacity, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(animData.scale, {
+            toValue: 0.4,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start();
+    });
 
-      setTimeout(animateDots, 1400);
-    };
-
-    animateDots();
-
-    // Auto finish after animation
+    // Finish splash after ~3 seconds
     const timer = setTimeout(() => {
       if (onFinish) onFinish();
-    }, 2200);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -70,37 +81,25 @@ export default function SplashScreen({ onFinish }) {
         Pantry Pal
       </Animated.Text>
 
-      <View style={styles.emojiRow}>
-        {FOOD_EMOJIS.map((emoji, index) => (
-          <Animated.Text
-            key={index}
-            style={[
-              styles.emoji,
-              {
-                transform: [{ scale: scaleAnims[index] }],
-              },
-            ]}
-          >
-            {emoji}
-          </Animated.Text>
-        ))}
-      </View>
+      {emojis.map((emojiData) => (
+        <Animated.Text
+          key={emojiData.id}
+          style={[
+            styles.floatingEmoji,
+            {
+              left: emojiData.x,
+              top: emojiData.y,
+              opacity: emojiData.opacity,
+              transform: [{ scale: emojiData.scale }],
+            },
+          ]}
+        >
+          {emojiData.emoji}
+        </Animated.Text>
+      ))}
 
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>Loading your pantry</Text>
-        <View style={styles.dotsContainer}>
-          {dotAnims.map((anim, index) => (
-            <Animated.Text
-              key={index}
-              style={[
-                styles.dot,
-                { opacity: anim },
-              ]}
-            >
-              .
-            </Animated.Text>
-          ))}
-        </View>
       </View>
     </View>
   );
@@ -114,36 +113,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 42,
+    fontSize: 44,
     fontWeight: 'bold',
     color: '#3f2a1d',
-    marginBottom: 40,
+    position: 'absolute',
+    top: '22%',
     letterSpacing: 1,
   },
-  emojiRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 60,
-  },
-  emoji: {
-    fontSize: 38,
-    marginHorizontal: 8,
+  floatingEmoji: {
+    position: 'absolute',
+    fontSize: 32,
   },
   loadingContainer: {
-    flexDirection: 'row',
+    position: 'absolute',
+    bottom: '18%',
     alignItems: 'center',
   },
   loadingText: {
     fontSize: 16,
     color: '#6b5b4f',
-    marginRight: 4,
-  },
-  dotsContainer: {
-    flexDirection: 'row',
-  },
-  dot: {
-    fontSize: 24,
-    color: '#6b5b4f',
-    marginHorizontal: 1,
   },
 });
