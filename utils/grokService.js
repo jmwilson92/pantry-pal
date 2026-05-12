@@ -27,12 +27,18 @@ Format as JSON array. Be creative and varied even if pantry is empty.`;
     });
 
     const data = await response.json();
+    
+    if (!data.choices || !data.choices[0]) {
+      console.error('Grok API returned no choices:', data);
+      return getMockMeals();
+    }
+
     const content = data.choices[0].message.content;
     const meals = JSON.parse(content.replace(/```json|```/g, '').trim());
     
     return meals.map(meal => ({
       ...meal,
-      image: `https://source.unsplash.com/featured/?${encodeURIComponent(meal.imagePrompt || meal.name)}&w=600&h=400`
+      image: `https://picsum.photos/seed/${encodeURIComponent(meal.name || 'food')}/300/200`
     }));
   } catch (error) {
     console.error('Grok API error:', error);
@@ -61,6 +67,12 @@ Format as JSON array with days Monday to Sunday, each with breakfast, lunch, din
     });
 
     const data = await response.json();
+    
+    if (!data.choices || !data.choices[0]) {
+      console.error('Grok weekly plan API error:', data);
+      return getMockWeeklyPlan();
+    }
+
     return JSON.parse(data.choices[0].message.content.replace(/```json|```/g, '').trim());
   } catch (error) {
     console.error('Grok weekly plan error:', error);
@@ -87,8 +99,14 @@ export async function getCookingInstructions(mealName, ingredients) {
     });
 
     const data = await response.json();
+    
+    if (!data.choices || !data.choices[0]) {
+      return 'Sorry, could not generate instructions right now. Try again later.';
+    }
+
     return data.choices[0].message.content;
   } catch (error) {
+    console.error('Cooking instructions error:', error);
     return 'Sorry, could not generate instructions right now. Try again later.';
   }
 }
